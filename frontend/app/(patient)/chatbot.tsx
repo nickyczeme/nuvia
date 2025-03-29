@@ -99,65 +99,11 @@ export default function ChatbotScreen() {
   )
 
   return (
-<<<<<<< HEAD
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ChevronLeft size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>MediBot</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        renderItem={renderMessage}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.messagesContainer}
-        onContentSizeChange={() => {
-          if (flatListRef.current) {
-            (flatListRef.current as any).scrollToEnd({ animated: true });
-          }
-        }}
-      />
-
-      {isLoading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color="#4a6fa5" />
-          <Text style={styles.loadingText}>MediBot está escribiendo...</Text>
-        </View>
-      )}
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-      >
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Escribe tu pregunta aquí..."
-            value={message}
-            onChangeText={setMessage}
-            multiline
-            editable={!isLoading}
-          />
-          <TouchableOpacity 
-            style={[
-              styles.sendButton,
-              (!message.trim() || isLoading) && styles.sendButtonDisabled
-            ]} 
-            onPress={handleSend}
-            disabled={!message.trim() || isLoading}
-          >
-            <Send size={20} color="#fff" />
-=======
     <GestureHandlerRootView style={{ flex: 1 }}>  {/* Wrap everything inside GestureHandlerRootView */}
       <SafeAreaView style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 15, backgroundColor: "white", borderBottomWidth: 1, borderBottomColor: "#e0e0e0" }}>
           <TouchableOpacity onPress={() => router.back()}>
             <ChevronLeft size={24} color="#333" />
->>>>>>> 99f31d4ebbd3a9d65a01c9041290d07b24fca25d
           </TouchableOpacity>
           <Text style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>MediBot</Text>
           <View style={{ width: 24 }} />

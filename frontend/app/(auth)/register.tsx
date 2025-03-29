@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Link, useRouter } from "expo-router"
 import { TextInput } from "react-native-gesture-handler"
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function SignupScreen() {
   const [email, setEmail] = useState("")
@@ -33,94 +34,96 @@ export default function SignupScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.logoContainer}>
-            <Image source={{ uri: "/placeholder.svg?height=80&width=80" }} style={styles.logo} />
-            <Text style={styles.appName}>Nuvia</Text>
-          </View>
-
-          <View style={styles.formContainer}>
-            <Text style={styles.title}>Crear Cuenta</Text>
-
-            <View style={styles.userTypeContainer}>
-              <TouchableOpacity
-                style={[styles.userTypeButton, userType === "patient" && styles.userTypeButtonActive]}
-                onPress={() => setUserType("patient")}
-              >
-                <Text style={[styles.userTypeText, userType === "patient" && styles.userTypeTextActive]}>Paciente</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.userTypeButton, userType === "doctor" && styles.userTypeButtonActive]}
-                onPress={() => setUserType("doctor")}
-              >
-                <Text style={[styles.userTypeText, userType === "doctor" && styles.userTypeTextActive]}>Médico</Text>
-              </TouchableOpacity>
+    <GestureHandlerRootView style={{ flex: 1 }}>  {/* Wrap everything inside GestureHandlerRootView */}
+      <SafeAreaView style={styles.container}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            <View style={styles.logoContainer}>
+              <Image source={{ uri: "/placeholder.svg?height=80&width=80" }} style={styles.logo} />
+              <Text style={styles.appName}>Nuvia</Text>
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>DNI</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Ingresa tu DNI"
-                value={dni}
-                onChangeText={setDni}
-                keyboardType="number-pad"
-              />
-            </View>
+            <View style={styles.formContainer}>
+              <Text style={styles.title}>Crear Cuenta</Text>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Correo Electrónico</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="ejemplo@correo.com"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Contraseña</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Crea una contraseña"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Confirmar Contraseña</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Confirma tu contraseña"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry
-              />
-            </View>
-
-            <TouchableOpacity style={styles.button} onPress={handleSignup}>
-              <Text style={styles.buttonText}>Registrarse</Text>
-            </TouchableOpacity>
-
-            <View style={styles.loginContainer}>
-              <Text style={styles.loginText}>¿Ya tienes una cuenta? </Text>
-              <Link href="/(auth)/login" asChild>
-                <TouchableOpacity>
-                  <Text style={styles.loginLink}>Inicia Sesión</Text>
+              <View style={styles.userTypeContainer}>
+                <TouchableOpacity
+                  style={[styles.userTypeButton, userType === "patient" && styles.userTypeButtonActive]}
+                  onPress={() => setUserType("patient")}
+                >
+                  <Text style={[styles.userTypeText, userType === "patient" && styles.userTypeTextActive]}>Paciente</Text>
                 </TouchableOpacity>
-              </Link>
+
+                <TouchableOpacity
+                  style={[styles.userTypeButton, userType === "doctor" && styles.userTypeButtonActive]}
+                  onPress={() => setUserType("doctor")}
+                >
+                  <Text style={[styles.userTypeText, userType === "doctor" && styles.userTypeTextActive]}>Médico</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>DNI</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ingresa tu DNI"
+                  value={dni}
+                  onChangeText={setDni}
+                  keyboardType="number-pad"
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Correo Electrónico</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="ejemplo@correo.com"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Contraseña</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Crea una contraseña"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Confirmar Contraseña</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Confirma tu contraseña"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry
+                />
+              </View>
+
+              <TouchableOpacity style={styles.button} onPress={handleSignup}>
+                <Text style={styles.buttonText}>Registrarse</Text>
+              </TouchableOpacity>
+
+              <View style={styles.loginContainer}>
+                <Text style={styles.loginText}>¿Ya tienes una cuenta? </Text>
+                <Link href="/(auth)/login" asChild>
+                  <TouchableOpacity>
+                    <Text style={styles.loginLink}>Inicia Sesión</Text>
+                  </TouchableOpacity>
+                </Link>
+              </View>
             </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </GestureHandlerRootView>
   )
 }
 

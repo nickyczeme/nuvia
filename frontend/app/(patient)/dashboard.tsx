@@ -5,7 +5,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "rea
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import { Calendar, MessageCircle, User, Pill, Calendar as CalendarIcon, Menu } from "lucide-react-native"
-
+import { GestureHandlerRootView } from 'react-native-gesture-handler'  // Import GestureHandlerRootView
 export default function PatientDashboardScreen() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("home")

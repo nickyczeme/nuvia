@@ -5,6 +5,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from "rea
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import { TextInput } from "react-native-gesture-handler"
+import { GestureHandlerRootView } from 'react-native-gesture-handler'  // Import GestureHandlerRootView
 
 export default function SetupProfileScreen() {
   const [firstName, setFirstName] = useState("")
@@ -33,9 +34,10 @@ export default function SetupProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
+    <GestureHandlerRootView style={{ flex: 1 }}>  {/* Wrap everything inside GestureHandlerRootView */}
+      <SafeAreaView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.header}>
           <Text style={styles.title}>Completa tu Perfil</Text>
           <Text style={styles.subtitle}>Necesitamos algunos datos para personalizar tu experiencia</Text>
         </View>
@@ -110,6 +112,7 @@ export default function SetupProfileScreen() {
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
+    </GestureHandlerRootView>
   )
 }
 

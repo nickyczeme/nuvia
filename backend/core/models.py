@@ -70,6 +70,19 @@ class Doctor(Usuario):
         null=True,
         blank=True
     )
+    token_dispositivo = models.CharField(max_length=255, blank=True, null=True)
+    matricula = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    estado_matricula = models.CharField(
+        max_length=10,
+        choices=[
+            ('vigente', 'Vigente'),
+            ('vencido', 'Vencido')
+        ],
+        default='vigente'
+    )
+    profesion = models.CharField(max_length=100, blank=True, null=True)
+    especialidad = models.CharField(max_length=100, blank=True, null=True)
+    domicilio_atencion = models.CharField(max_length=200, blank=True, null=True)
 
 class Anticonceptivo(models.Model):
     """
@@ -88,8 +101,14 @@ class Paciente(Usuario):
     Relaciona con Doctor (uno) y Anticonceptivo (uno).
     """
     obra_social = models.CharField(max_length=100, blank=True, null=True)
-    # Changed to CharField, so we can specify max_length=20
     credencial = models.CharField(max_length=20, blank=True, null=True)
+    token_dispositivo = models.CharField(max_length=255, blank=True, null=True)
+    fecha_nacimiento = models.DateField(null=True, blank=True)
+    sexo = models.CharField(max_length=20, choices=[
+        ('M', 'Masculino'),
+        ('F', 'Femenino'),
+        ('O', 'Otro')
+    ], null=True, blank=True)
 
     fecha_de_inicio_periodo = models.DateField(blank=True, null=True)
     cantidad_de_cajas = models.IntegerField(
@@ -149,6 +168,14 @@ class SolicitudReceta(models.Model):
         on_delete=models.CASCADE,
         related_name='solicitudes_recetas'
     )
+    cantidad_anticonceptivos = models.IntegerField(
+        validators=[
+            MinValueValidator(1, message="La cantidad de anticonceptivos debe ser mayor a 0"),
+            MaxValueValidator(3, message="La cantidad de anticonceptivos no puede ser mayor a 3")
+        ],
+        help_text="Cantidad de anticonceptivos (1-3)",
+        default=1
+    )
     fecha = models.DateTimeField(auto_now_add=True)
     status = models.CharField(
         max_length=10,
@@ -160,6 +187,7 @@ class SolicitudReceta(models.Model):
         null=True,
         blank=True
     )
+    codigo_barras = models.CharField(max_length=100, unique=True, null=True, blank=True)
 
     def __str__(self):
         return f"Receta #{self.pk} - {self.paciente} -> {self.doctor} ({self.status})"

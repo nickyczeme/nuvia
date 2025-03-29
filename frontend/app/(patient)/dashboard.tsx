@@ -1,24 +1,54 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import { Calendar, MessageCircle, User, Pill, Calendar as CalendarIcon, Menu } from "lucide-react-native"
-import { GestureHandlerRootView } from 'react-native-gesture-handler'  // Import GestureHandlerRootView
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import axios from 'axios'
+import Constants from 'expo-constants'
+
+const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:8000'
+
 export default function PatientDashboardScreen() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("home")
-
-  // Mock data
-  const userData = {
-    name: "María López",
+  const [userData, setUserData] = useState({
+    name: "",
     contraceptiveMethod: "Pastillas",
     brand: "Yasmin",
     startDate: "15/03/2025",
     remainingBoxes: 2,
-  }
+  })
+  const [loading, setLoading] = useState(true)
 
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token')
+        const response = await axios.get(`${API_URL}/api/usuarios/me/`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+
+        setUserData({
+          ...userData,
+          name: `${response.data.nombre} ${response.data.apellido}`,
+        })
+        setLoading(false)
+      } catch (error) {
+        console.error('Error fetching user data:', error)
+        setLoading(false)
+      }
+    }
+
+    fetchUserData()
+  }, [])
+
+  // Mock data
   const doctorData = {
     name: "Dra. Ana García",
     specialty: "Ginecología",
@@ -157,7 +187,7 @@ export default function PatientDashboardScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.greeting}>Hola, {userData.name}</Text>
+        <Text style={styles.greeting}>Hola, {userData.nombre}</Text>
         <TouchableOpacity style={styles.menuButton}>
           <Menu size={24} color="#333" />
         </TouchableOpacity>
@@ -489,5 +519,3 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 })
-
-

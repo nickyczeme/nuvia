@@ -1,129 +1,102 @@
 "use client"
 
-import { useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native"
+import { useEffect, useState } from "react"
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import { Calendar, MessageCircle, User, Pill, Calendar as CalendarIcon, Menu } from "lucide-react-native"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import axios from "axios"
 
 export default function PatientDashboardScreen() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("home")
+  const [userData, setUserData] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  // Mock data
-  const userData = {
-    name: "María López",
-    contraceptiveMethod: "Pastillas",
-    brand: "Yasmin",
-    startDate: "15/03/2025",
-    remainingBoxes: 2,
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const token = await AsyncStorage.getItem("token")
+        if (!token) {
+          router.replace("/(auth)/login")
+          return
+        }
+
+        const response = await axios.get("http://127.0.0.1:8000/api/usuarios/me/", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+
+        setUserData(response.data)
+      } catch (error) {
+        console.error("Error fetching user data", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUserData()
+  }, [])
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" color="#4a6fa5" />
+      </SafeAreaView>
+    )
   }
 
-  const doctorData = {
-    name: "Dra. Ana García",
-    specialty: "Ginecología",
-    hospital: "Hospital Central",
-    nextAppointment: "15/04/2025",
-    image: "/placeholder.svg?height=60&width=60",
-  }
+  if (!userData) return null
 
-  const cycleData = {
-    currentDay: 14,
-    nextPeriod: "12/04/2025",
-    daysUntilNextPeriod: 14,
-    cycleLength: 28,
-    periodLength: 5,
-  }
+  const doctor = userData.doctor_asignado
 
   const renderHomeTab = () => (
     <ScrollView style={styles.tabContent}>
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Mi Médico</Text>
-          <TouchableOpacity style={styles.sectionAction}>
-            <Text style={styles.sectionActionText}>Ver Perfil</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.doctorCard}>
-          <Image source={{ uri: doctorData.image }} style={styles.doctorImage} />
-          <View style={styles.doctorInfo}>
-            <Text style={styles.doctorName}>{doctorData.name}</Text>
-            <Text style={styles.doctorSpecialty}>{doctorData.specialty}</Text>
-            <Text style={styles.doctorHospital}>{doctorData.hospital}</Text>
+      {doctor && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Mi Médico</Text>
+            <TouchableOpacity style={styles.sectionAction}>
+              <Text style={styles.sectionActionText}>Ver Perfil</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.messageButton}>
-            <MessageCircle size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
 
-        <View style={styles.appointmentCard}>
-          <CalendarIcon size={20} color="#4a6fa5" />
-          <View style={styles.appointmentInfo}>
-            <Text style={styles.appointmentLabel}>Próxima Cita</Text>
-            <Text style={styles.appointmentDate}>{doctorData.nextAppointment}</Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Mi Ciclo</Text>
-          <TouchableOpacity style={styles.sectionAction}>
-            <Text style={styles.sectionActionText}>Ver Calendario</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.cycleCard}>
-          <View style={styles.cycleIndicator}>
-            <View style={styles.cycleIndicatorInner}>
-              <Text style={styles.cycleDay}>{cycleData.currentDay}</Text>
+          <View style={styles.doctorCard}>
+            <Image source={{ uri: "/placeholder.svg?height=60&width=60" }} style={styles.doctorImage} />
+            <View style={styles.doctorInfo}>
+              <Text style={styles.doctorName}>{doctor.nombre} {doctor.apellido}</Text>
+              <Text style={styles.doctorSpecialty}>{doctor.especialidad}</Text>
+              <Text style={styles.doctorHospital}>{doctor.domicilio_atencion}</Text>
             </View>
-          </View>
-          <View style={styles.cycleInfo}>
-            <Text style={styles.cycleInfoTitle}>Día {cycleData.currentDay} de tu ciclo</Text>
-            <Text style={styles.cycleInfoSubtitle}>Ventana fértil</Text>
-            <View style={styles.cycleDetails}>
-              <View style={styles.cycleDetailItem}>
-                <Text style={styles.cycleDetailLabel}>Próximo Período</Text>
-                <Text style={styles.cycleDetailValue}>{cycleData.nextPeriod}</Text>
-                <Text style={styles.cycleDetailSubvalue}>En {cycleData.daysUntilNextPeriod} días</Text>
-              </View>
-              <View style={styles.cycleDetailItem}>
-                <Text style={styles.cycleDetailLabel}>Duración del Ciclo</Text>
-                <Text style={styles.cycleDetailValue}>{cycleData.cycleLength} días</Text>
-                <Text style={styles.cycleDetailSubvalue}>Promedio</Text>
-              </View>
-            </View>
+            <TouchableOpacity style={styles.messageButton}>
+              <MessageCircle size={20} color="#fff" />
+            </TouchableOpacity>
           </View>
         </View>
-      </View>
+      )}
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Mi Anticonceptivo</Text>
-          <TouchableOpacity style={styles.sectionAction}>
-            <Text style={styles.sectionActionText}>Editar</Text>
-          </TouchableOpacity>
         </View>
 
         <View style={styles.contraceptiveCard}>
           <View style={styles.contraceptiveHeader}>
             <Pill size={24} color="#4a6fa5" />
             <View style={styles.contraceptiveInfo}>
-              <Text style={styles.contraceptiveMethod}>{userData.contraceptiveMethod}</Text>
-              <Text style={styles.contraceptiveBrand}>{userData.brand}</Text>
+              <Text style={styles.contraceptiveMethod}>{userData.anticonceptivo?.tipo ?? "N/A"}</Text>
+              <Text style={styles.contraceptiveBrand}>{userData.anticonceptivo?.marca ?? "N/A"}</Text>
             </View>
           </View>
 
           <View style={styles.contraceptiveDetails}>
             <View style={styles.contraceptiveDetailItem}>
               <Text style={styles.contraceptiveDetailLabel}>Inicio de Caja Actual</Text>
-              <Text style={styles.contraceptiveDetailValue}>{userData.startDate}</Text>
+              <Text style={styles.contraceptiveDetailValue}>{userData.fecha_de_inicio_periodo ?? "No definido"}</Text>
             </View>
             <View style={styles.contraceptiveDetailItem}>
               <Text style={styles.contraceptiveDetailLabel}>Cajas Restantes</Text>
-              <Text style={styles.contraceptiveDetailValue}>{userData.remainingBoxes}</Text>
+              <Text style={styles.contraceptiveDetailValue}>{userData.cantidad_de_cajas}</Text>
             </View>
           </View>
 
@@ -132,32 +105,26 @@ export default function PatientDashboardScreen() {
           </TouchableOpacity>
         </View>
       </View>
-
-      <TouchableOpacity style={styles.chatbotButton} onPress={() => router.push("/(patient)/chatbot")}>
-        <MessageCircle size={24} color="#fff" />
-        <Text style={styles.chatbotButtonText}>Consultar al Chatbot</Text>
-      </TouchableOpacity>
     </ScrollView>
   )
 
   const renderProfileTab = () => (
     <View style={styles.tabContent}>
       <Text style={styles.tabTitle}>Mi Perfil</Text>
-      {/* Profile content would go here */}
+      {/* Aquí podrías mostrar datos del paciente */}
     </View>
   )
 
   const renderCalendarTab = () => (
     <View style={styles.tabContent}>
       <Text style={styles.tabTitle}>Calendario</Text>
-      {/* Calendar content would go here */}
     </View>
   )
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.greeting}>Hola, {userData.name}</Text>
+        <Text style={styles.greeting}>Hola, {userData.nombre}</Text>
         <TouchableOpacity style={styles.menuButton}>
           <Menu size={24} color="#333" />
         </TouchableOpacity>
@@ -165,8 +132,8 @@ export default function PatientDashboardScreen() {
 
       <View style={styles.content}>
         {activeTab === "home" && renderHomeTab()}
-        {activeTab === "profile" && renderProfileTab()}
         {activeTab === "calendar" && renderCalendarTab()}
+        {activeTab === "profile" && renderProfileTab()}
       </View>
 
       <View style={styles.tabBar}>
@@ -177,7 +144,6 @@ export default function PatientDashboardScreen() {
           <Calendar size={24} color={activeTab === "home" ? "#4a6fa5" : "#666"} />
           <Text style={[styles.tabButtonText, activeTab === "home" && styles.tabButtonTextActive]}>Inicio</Text>
         </TouchableOpacity>
-
         <TouchableOpacity
           style={[styles.tabButton, activeTab === "calendar" && styles.tabButtonActive]}
           onPress={() => setActiveTab("calendar")}
@@ -185,7 +151,6 @@ export default function PatientDashboardScreen() {
           <CalendarIcon size={24} color={activeTab === "calendar" ? "#4a6fa5" : "#666"} />
           <Text style={[styles.tabButtonText, activeTab === "calendar" && styles.tabButtonTextActive]}>Calendario</Text>
         </TouchableOpacity>
-
         <TouchableOpacity
           style={[styles.tabButton, activeTab === "profile" && styles.tabButtonActive]}
           onPress={() => setActiveTab("profile")}
@@ -489,5 +454,3 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 })
-
-

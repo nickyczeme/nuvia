@@ -10,20 +10,54 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Link, useRouter } from "expo-router"
 import { TextInput } from "react-native-gesture-handler"
+import axios from "axios"
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState("")
+  const [dni, setDni] = useState("")
   const [password, setPassword] = useState("")
   const router = useRouter()
 
-  const handleLogin = () => {
-    // In a real app, you would validate and authenticate here
-    // For now, we'll just navigate to the appropriate dashboard
-    router.push("/(patient)/dashboard")
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post("http://127.0.0.1:8000/api/usuarios/login/", {
+        dni: parseInt(dni),
+        password,
+      })
+
+      const { access, refresh, user } = response.data
+
+      console.log("Login exitoso:", user)
+
+      // Optional: Save token to async storage or context here
+
+      if (user.tipo_usuario === "paciente") {
+        router.push({
+          pathname: "/(patient)/dashboard",
+          params: {
+            tipo: user.tipo_usuario,
+            nombre: user.nombre,
+          },
+        })
+      } else if (user.tipo_usuario === "doctor") {
+        router.push({
+          pathname: "/(doc)/dashboard",
+          params: {
+            tipo: user.tipo_usuario,
+            nombre: user.nombre,
+          },
+        })
+      } else {
+        Alert.alert("Error", "Tipo de usuario desconocido.")
+      }
+    } catch (error) {
+      console.error("Error de login:", error.response?.data || error.message)
+      Alert.alert("Error de login", "DNI o contraseña incorrectos.")
+    }
   }
 
   return (
@@ -39,14 +73,13 @@ export default function LoginScreen() {
             <Text style={styles.title}>Iniciar Sesión</Text>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Correo Electrónico</Text>
+              <Text style={styles.label}>DNI</Text>
               <TextInput
                 style={styles.input}
-                placeholder="ejemplo@correo.com"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
+                placeholder="Ingresa tu DNI"
+                value={dni}
+                onChangeText={setDni}
+                keyboardType="number-pad"
               />
             </View>
 

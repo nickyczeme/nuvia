@@ -1,117 +1,170 @@
+// setupProfile.tsx
 "use client"
 
-import { useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from "react-native"
+import { useState, useEffect } from "react"
+import axios from "axios"
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+  Platform,
+} from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import { TextInput } from "react-native-gesture-handler"
-import { GestureHandlerRootView } from 'react-native-gesture-handler'  // Import GestureHandlerRootView
+import { GestureHandlerRootView } from "react-native-gesture-handler"
+import Constants from "expo-constants"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+
+const API_URL = Constants.expoConfig?.extra?.apiUrl || "http://localhost:8000"
 
 export default function SetupProfileScreen() {
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
-  const [contraceptiveMethod, setContraceptiveMethod] = useState("")
-  const [brand, setBrand] = useState("")
+  const [obraSocial, setObraSocial] = useState("")
+  const [credencial, setCredencial] = useState("")
   const [startDate, setStartDate] = useState("")
-  const [remainingBoxes, setRemainingBoxes] = useState("")
+  const [cajas, setCajas] = useState("")
+  const [sexo, setSexo] = useState("")
+  const [fechaNacimiento, setFechaNacimiento] = useState("")
+  const [anticonceptivo, setAnticonceptivo] = useState("")
   const router = useRouter()
 
-  const contraceptiveMethods = [
-    { id: "pills", name: "Pastillas" },
-    { id: "patch", name: "Parche" },
-    { id: "ring", name: "Anillo" },
+  const sexOptions = [
+    { id: "M", label: "Masculino" },
+    { id: "F", label: "Femenino" },
+    { id: "O", label: "Otro" },
   ]
 
-  const handleContinue = () => {
-    // Validate fields
-    if (!firstName || !lastName || !contraceptiveMethod || !brand || !startDate || !remainingBoxes) {
-      Alert.alert("Error", "Por favor completa todos los campos")
+  const handleContinue = async () => {
+    if (!sexo || !fechaNacimiento || !startDate || !cajas) {
+      Alert.alert("Error", "Por favor completa todos los campos obligatorios")
       return
     }
 
-    // In a real app, you would save the profile data here
-    router.push("/(patient)/choose_doctor")
+    try {
+      const token = await AsyncStorage.getItem("token")
+      const payload = {
+        obra_social: obraSocial,
+        credencial: credencial,
+        fecha_de_inicio_periodo: startDate,
+        cantidad_de_cajas: parseInt(cajas),
+        sexo,
+        fecha_nacimiento: fechaNacimiento,
+        anticonceptivo: anticonceptivo || null,
+      }
+
+      await axios.patch(`${API_URL}/api/usuarios/update/`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      router.push("/(patient)/choose_doctor")
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error("Error al guardar el perfil:", error.response?.data || error.message)
+      } else {
+        console.error("Error al guardar el perfil:", error)
+      }
+      Alert.alert("Error", "No se pudo guardar el perfil")
+    }
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>  {/* Wrap everything inside GestureHandlerRootView */}
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.header}>
           <Text style={styles.title}>Completa tu Perfil</Text>
-          <Text style={styles.subtitle}>Necesitamos algunos datos para personalizar tu experiencia</Text>
-        </View>
 
-        <View style={styles.formContainer}>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Información Personal</Text>
+          {/* Información Personal */}
+          <Text style={styles.sectionTitle}>Información Personal</Text>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Nombre</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Ingresa tu nombre"
-                value={firstName}
-                onChangeText={setFirstName}
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Apellido</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Ingresa tu apellido"
-                value={lastName}
-                onChangeText={setLastName}
-              />
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Método Anticonceptivo</Text>
-
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Sexo</Text>
             <View style={styles.methodContainer}>
-              {contraceptiveMethods.map((method) => (
+              {sexOptions.map((option) => (
                 <TouchableOpacity
-                  key={method.id}
-                  style={[styles.methodButton, contraceptiveMethod === method.id && styles.methodButtonActive]}
-                  onPress={() => setContraceptiveMethod(method.id)}
+                  key={option.id}
+                  style={[
+                    styles.methodButton,
+                    sexo === option.id && styles.methodButtonActive,
+                  ]}
+                  onPress={() => setSexo(option.id)}
                 >
-                  <Text style={[styles.methodText, contraceptiveMethod === method.id && styles.methodTextActive]}>
-                    {method.name}
+                  <Text
+                    style={[
+                      styles.methodText,
+                      sexo === option.id && styles.methodTextActive,
+                    ]}
+                  >
+                    {option.label}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Marca</Text>
-              <TextInput style={styles.input} placeholder="Ingresa la marca" value={brand} onChangeText={setBrand} />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Primer día de ingesta (actual)</Text>
-              <TextInput style={styles.input} placeholder="DD/MM/AAAA" value={startDate} onChangeText={setStartDate} />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Cajas restantes completas</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Número de cajas"
-                value={remainingBoxes}
-                onChangeText={setRemainingBoxes}
-                keyboardType="number-pad"
-              />
-            </View>
           </View>
-        </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleContinue}>
-          <Text style={styles.buttonText}>Continuar</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Fecha de nacimiento</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="AAAA-MM-DD"
+              value={fechaNacimiento}
+              onChangeText={setFechaNacimiento}
+            />
+          </View>
+
+          {/* Detalles del Método Anticonceptivo */}
+          <Text style={styles.sectionTitle}>Cobertura y Ciclo</Text>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Obra social</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej: OSDE, Swiss Medical"
+              value={obraSocial}
+              onChangeText={setObraSocial}
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Credencial</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Número de credencial"
+              value={credencial}
+              onChangeText={setCredencial}
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Fecha de inicio del período</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="AAAA-MM-DD"
+              value={startDate}
+              onChangeText={setStartDate}
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Cajas restantes completas</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="1-3"
+              keyboardType="numeric"
+              value={cajas}
+              onChangeText={setCajas}
+            />
+          </View>
+
+          <TouchableOpacity style={styles.button} onPress={handleContinue}>
+            <Text style={styles.buttonText}>Continuar</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
     </GestureHandlerRootView>
   )
 }
@@ -125,38 +178,19 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 20,
   },
-  header: {
-    marginBottom: 20,
-  },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#333",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
-  },
-  formContainer: {
-    backgroundColor: "white",
-    borderRadius: 15,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
     marginBottom: 20,
-  },
-  section: {
-    marginBottom: 20,
+    textAlign: "center",
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#4a6fa5",
     marginBottom: 15,
+    marginTop: 25,
   },
   inputContainer: {
     marginBottom: 15,
@@ -176,7 +210,7 @@ const styles = StyleSheet.create({
   },
   methodContainer: {
     flexDirection: "row",
-    marginBottom: 15,
+    marginBottom: 10,
   },
   methodButton: {
     flex: 1,
@@ -205,7 +239,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 15,
     alignItems: "center",
-    marginBottom: 20,
+    marginTop: 20,
   },
   buttonText: {
     color: "white",

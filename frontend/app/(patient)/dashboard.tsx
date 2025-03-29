@@ -7,6 +7,7 @@ import { useRouter } from "expo-router"
 import { Calendar, MessageCircle, User, Pill, Calendar as CalendarIcon, Menu } from "lucide-react-native"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import axios from "axios"
+import { GestureHandlerRootView } from 'react-native-gesture-handler'  // Import GestureHandlerRootView
 
 export default function PatientDashboardScreen() {
   const router = useRouter()

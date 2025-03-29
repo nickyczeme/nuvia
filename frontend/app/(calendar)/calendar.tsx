@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { Link, useRouter } from "expo-router"
-import { ChevronLeft, ChevronRight } from "lucide-react-native"
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native"
-import { Button } from "react-native-paper"
+import Link from "next/link"
+import { ChevronLeft, ChevronRight } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { GestureHandlerRootView } from 'react-native-gesture-handler'  // Import GestureHandlerRootView
 
 export default function CalendarPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
@@ -89,35 +90,63 @@ export default function CalendarPage() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <Button
-            mode="text"
-            onPress={() => router.back()}
-            icon="chevron-left"
-          >
-            Back
-          </Button>
-        </View>
-        <Text style={styles.monthTitle}>
-          {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-        </Text>
-      </View>
+    <GestureHandlerRootView style={{ flex: 1 }}>  {/* Wrap everything inside GestureHandlerRootView */}
+      <div className="container max-w-md mx-auto px-4 py-8">
+        <header className="mb-6">
+          <div className="flex items-center mb-4">
+            <Link href="/">
+              <Button variant="ghost" size="sm" onPress={() => {}}>
+                <div className="flex items-center gap-2">
+                  <ChevronLeft className="h-5 w-5" />
+                  <span>Back</span>
+                </div>
+              </Button>
+            </Link>
+            <h1 className="text-xl font-bold text-center flex-1">Calendar</h1>
+          </div>
+        </header>
+        <Card>
+          <CardContent>
+            <div className="flex justify-between items-center mb-4">
+              <Button onPress={prevMonth} variant="ghost" size="sm">
+                  <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <h2 className="text-lg font-medium">
+                {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+              </h2>
+              <Button variant="ghost" size="sm" onPress={nextMonth}>
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
 
-      <View style={styles.calendar}>
-        <View style={styles.weekDays}>
-          {daysOfWeek.map((day) => (
-            <Text key={day} style={styles.weekDay}>
-              {day}
-            </Text>
-          ))}
-        </View>
-        <View style={styles.daysGrid}>
-          {renderCalendar()}
-        </View>
-      </View>
-    </View>
+            <div className="grid grid-cols-7 gap-1 text-center mb-2">
+              {daysOfWeek.map((day) => (
+                <div key={day} className="text-xs font-medium text-muted-foreground">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-1 text-center">{renderCalendar()}</div>
+          </CardContent>
+        </Card>
+
+        <div className="mt-6 space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-red-100"></div>
+            <span className="text-sm">Period</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-blue-100"></div>
+            <span className="text-sm">Ovulation</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-blue-50"></div>
+            <span className="text-sm">Fertile Window</span>
+          </div>
+        </div>
+      </div>
+    </GestureHandlerRootView>
   )
 }
 

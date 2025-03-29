@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Card, Button } from 'react-native-paper';
-
+import { GestureHandlerRootView } from 'react-native-gesture-handler'  // Import GestureHandlerRootView
 export default function HomeScreen() {
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>  {/* Wrap everything inside GestureHandlerRootView */}
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.greeting}>¡Hola!</Text>
@@ -58,6 +59,7 @@ export default function HomeScreen() {
         </Card.Content>
       </Card>
     </ScrollView>
+    </GestureHandlerRootView>
   );
 }
 

@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import { TextInput } from "react-native-gesture-handler"
 import { Search } from "lucide-react-native"
+import { GestureHandlerRootView } from 'react-native-gesture-handler'  // Import GestureHandlerRootView
 
 export default function SelectDoctorScreen() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -89,37 +90,39 @@ export default function SelectDoctorScreen() {
   )
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Selecciona tu Médico</Text>
-        <Text style={styles.subtitle}>Elige un médico para conectarte y recibir atención personalizada</Text>
-      </View>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Selecciona tu Médico</Text>
+          <Text style={styles.subtitle}>Elige un médico para conectarte y recibir atención personalizada</Text>
+        </View>
 
-      <View style={styles.searchContainer}>
-        <Search size={20} color="#666" style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Buscar por nombre, especialidad o centro médico"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
+        <View style={styles.searchContainer}>
+          <Search size={20} color="#666" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar por nombre, especialidad o centro médico"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+
+        <FlatList
+          data={filteredDoctors}
+          renderItem={renderDoctorItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
         />
-      </View>
 
-      <FlatList
-        data={filteredDoctors}
-        renderItem={renderDoctorItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>No encuentras a tu médico? Puedes invitarlo a unirse a la plataforma.</Text>
-        <TouchableOpacity style={styles.inviteButton}>
-          <Text style={styles.inviteButtonText}>Invitar Médico</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>No encuentras a tu médico? Puedes invitarlo a unirse a la plataforma.</Text>
+          <TouchableOpacity style={styles.inviteButton}>
+            <Text style={styles.inviteButtonText}>Invitar Médico</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </GestureHandlerRootView>
   )
 }
 

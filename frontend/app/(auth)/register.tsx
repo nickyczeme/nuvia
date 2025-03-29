@@ -59,12 +59,16 @@ export default function SignupScreen() {
       axios.defaults.headers.common['Authorization'] = `Bearer ${access}`;
 
       if (userType === "paciente") {
-        router.push("/(patient)/dashboard")
+        router.push("/(patient)/profile")
       } else {
         router.push("/(doc)/dashboard")
       }
     } catch (error) {
-      console.error("Error en el registro:", error.response?.data || error.message)
+      if (axios.isAxiosError(error)) {
+        console.error("Error en el registro:", error.response?.data || error.message)
+      } else {
+        console.error("Error en el registro:", error)
+      }
       Alert.alert("Error", "No se pudo registrar el usuario.")
     }
   }

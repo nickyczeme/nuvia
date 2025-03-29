@@ -8,6 +8,7 @@ from .serializers import UsuarioRegisterSerializer, UsuarioLoginSerializer, Noti
 from .models import Usuario, Paciente
 from .services.notification_service import NotificationService
 import logging
+from rest_framework.decorators import api_view, permission_classes
 
 logger = logging.getLogger(__name__)
 
@@ -63,3 +64,25 @@ class NotificationViewSet(viewsets.ViewSet):
                     status=status.HTTP_404_NOT_FOUND
                 )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_info(request):
+    user = request.user
+    data = {
+        'id': user.id,
+        'nombre': user.nombre,
+        'apellido': user.apellido,
+        'email': user.email,
+        'dni': user.dni,
+    }
+    return Response(data)
+
+
+class UpdatePacienteProfileView(generics.UpdateAPIView):
+    queryset = Paciente.objects.all()
+    serializer_class = UsuarioRegisterSerializer  # You can reuse this if it supports partial updates
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user  # Updates the logged-in user's profile

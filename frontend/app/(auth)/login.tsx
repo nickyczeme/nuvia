@@ -62,7 +62,11 @@ export default function LoginScreen() {
         Alert.alert("Error", "Tipo de usuario desconocido.")
       }
     } catch (error) {
-      console.error("Error de login:", error.response?.data || error.message)
+      if (axios.isAxiosError(error)) {
+        console.error("Error de login:", error.response?.data || error.message)
+      } else {
+        console.error("Error de login:", error)
+      }
       Alert.alert("Error de login", "DNI o contraseña incorrectos.")
     }
   }

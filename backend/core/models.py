@@ -133,7 +133,8 @@ class Paciente(Usuario):
     doctor_asignado = models.ForeignKey(
         Doctor,
         on_delete=models.CASCADE,
-        related_name='pacientes'
+        related_name='pacientes',
+        null=True,
     )
 
     def __str__(self):

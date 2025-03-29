@@ -6,25 +6,26 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import { TextInput } from "react-native-gesture-handler"
 import { ChevronLeft, Send } from "lucide-react-native"
-<<<<<<< HEAD
+import { GestureHandlerRootView } from 'react-native-gesture-handler';  // Import GestureHandlerRootView
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-=======
-import { GestureHandlerRootView } from 'react-native-gesture-handler'  // Import GestureHandlerRootView
->>>>>>> 99f31d4ebbd3a9d65a01c9041290d07b24fca25d
 export default function ChatbotScreen() {
-  const router = useRouter()
-  const [message, setMessage] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter();
+  const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState([
     {
       id: "1",
       text: "Hola, soy MediBot. Puedo responder tus preguntas sobre ciclo menstrual y anticonceptivos. ¿En qué puedo ayudarte hoy?",
       sender: "bot",
     },
-  ])
-  const flatListRef = useRef(null)
+  ]);
+  const flatListRef = useRef(null);
+
+  // El resto de tu código aquí
+}
+
 
   const handleSend = async () => {
     if (message.trim() === "" || isLoading) return

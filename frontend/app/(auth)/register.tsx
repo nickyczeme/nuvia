@@ -4,17 +4,23 @@ import { TextInput, Button, Text } from 'react-native-paper';
 import { router } from 'expo-router';
 
 export default function RegisterScreen() {
-  const [name, setName] = useState('');
+  const [dni, setDni] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [selectedRole, setSelectedRole] = useState<'medico' | 'paciente' | null>(null);
 
   const handleRegister = async () => {
     try {
       setLoading(true);
       setError('');
+
+      if (!selectedRole) {
+        setError('Por favor, selecciona tu rol');
+        return;
+      }
 
       // Validación básica
       if (password !== confirmPassword) {
@@ -23,13 +29,17 @@ export default function RegisterScreen() {
       }
 
       // TODO: Implementar lógica de registro real aquí
-      console.log('Registro con:', { name, email, password });
+      console.log('Registro con:', { dni, email, password, role: selectedRole });
 
       // Simular un delay
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Navegar a la app principal después del registro exitoso
-      router.replace('/(tabs)');
+      // Navegar según el rol seleccionado
+      if (selectedRole === 'medico') {
+        router.replace('/doctor/dashboard');
+      } else {
+        router.replace('/patient/profile');
+      }
 
     } catch (err) {
       setError('Error al registrarse. Por favor, intenta de nuevo.');
@@ -46,9 +56,10 @@ export default function RegisterScreen() {
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <TextInput
-        label="Nombre"
-        value={name}
-        onChangeText={setName}
+        label="DNI"
+        value={dni}
+        onChangeText={setDni}
+        keyboardType="numeric"
         style={styles.input}
       />
 
@@ -76,6 +87,24 @@ export default function RegisterScreen() {
         secureTextEntry
         style={styles.input}
       />
+
+      <Text style={styles.roleTitle}>Selecciona tu rol:</Text>
+      <View style={styles.roleButtons}>
+        <Button
+          mode={selectedRole === 'medico' ? 'contained' : 'outlined'}
+          onPress={() => setSelectedRole('medico')}
+          style={[styles.roleButton, selectedRole === 'medico' && styles.selectedRole]}
+        >
+          Soy Médico
+        </Button>
+        <Button
+          mode={selectedRole === 'paciente' ? 'contained' : 'outlined'}
+          onPress={() => setSelectedRole('paciente')}
+          style={[styles.roleButton, selectedRole === 'paciente' && styles.selectedRole]}
+        >
+          Soy Paciente
+        </Button>
+      </View>
 
       <Button
         mode="contained"
@@ -123,5 +152,23 @@ const styles = StyleSheet.create({
     color: 'red',
     marginBottom: 16,
     textAlign: 'center',
+  },
+  roleTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  roleButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 20,
+  },
+  roleButton: {
+    flex: 1,
+    marginHorizontal: 8,
+  },
+  selectedRole: {
+    backgroundColor: '#6200ee',
   },
 }); 

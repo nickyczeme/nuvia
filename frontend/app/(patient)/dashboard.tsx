@@ -1,14 +1,26 @@
 "use client"
 
 import { useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Modal, TextInput, Switch } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import { Calendar, MessageCircle, User, Pill, Calendar as CalendarIcon, Menu } from "lucide-react-native"
 import { GestureHandlerRootView } from 'react-native-gesture-handler'  // Import GestureHandlerRootView
+import { CalendarList } from 'react-native-calendars'  // Importa el componente de calendario
+
 export default function PatientDashboardScreen() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("home")
+  const [isModalVisible, setIsModalVisible] = useState(false)  // Estado para controlar la visibilidad del modal
+  const [isReminderModalVisible, setIsReminderModalVisible] = useState(false)  // Estado para el nuevo modal
+  const [editableUserData, setEditableUserData] = useState({
+    name: "María López",
+    contraceptiveMethod: "Pastillas",
+    brand: "Yasmin",
+    startDate: "15/03/2025",
+    remainingBoxes: 2,
+  })  // Estado para los datos editables
+  const [sendReminder, setSendReminder] = useState(false)  // Estado para el switch
 
   // Mock data
   const userData = {
@@ -35,34 +47,44 @@ export default function PatientDashboardScreen() {
     periodLength: 5,
   }
 
+  // Función para manejar cambios en los campos de texto
+  const handleInputChange = (field: string, value: string) => {
+    setEditableUserData({ ...editableUserData, [field]: value })
+  }
+
   const renderHomeTab = () => (
     <ScrollView style={styles.tabContent}>
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Mi Médico</Text>
+          <Text style={styles.sectionTitle}>Mi Anticonceptivo</Text>
           <TouchableOpacity style={styles.sectionAction}>
-            <Text style={styles.sectionActionText}>Ver Perfil</Text>
+            <Text style={styles.sectionActionText}>Editar</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.doctorCard}>
-          <Image source={{ uri: doctorData.image }} style={styles.doctorImage} />
-          <View style={styles.doctorInfo}>
-            <Text style={styles.doctorName}>{doctorData.name}</Text>
-            <Text style={styles.doctorSpecialty}>{doctorData.specialty}</Text>
-            <Text style={styles.doctorHospital}>{doctorData.hospital}</Text>
+        <View style={styles.contraceptiveCard}>
+          <View style={styles.contraceptiveHeader}>
+            <Pill size={24} color="#4a6fa5" />
+            <View style={styles.contraceptiveInfo}>
+              <Text style={styles.contraceptiveMethod}>{userData.contraceptiveMethod}</Text>
+              <Text style={styles.contraceptiveBrand}>{userData.brand}</Text>
+            </View>
           </View>
-          <TouchableOpacity style={styles.messageButton}>
-            <MessageCircle size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
 
-        <View style={styles.appointmentCard}>
-          <CalendarIcon size={20} color="#4a6fa5" />
-          <View style={styles.appointmentInfo}>
-            <Text style={styles.appointmentLabel}>Próxima Cita</Text>
-            <Text style={styles.appointmentDate}>{doctorData.nextAppointment}</Text>
+          <View style={styles.contraceptiveDetails}>
+            <View style={styles.contraceptiveDetailItem}>
+              <Text style={styles.contraceptiveDetailLabel}>Inicio de Caja Actual</Text>
+              <Text style={styles.contraceptiveDetailValue}>{userData.startDate}</Text>
+            </View>
+            <View style={styles.contraceptiveDetailItem}>
+              <Text style={styles.contraceptiveDetailLabel}>Cajas Restantes</Text>
+              <Text style={styles.contraceptiveDetailValue}>{userData.remainingBoxes}</Text>
+            </View>
           </View>
+
+          <TouchableOpacity style={styles.reminderButton} onPress={() => setIsReminderModalVisible(true)}>
+            <Text style={styles.reminderButtonText}>Configurar Recordatorio</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -101,35 +123,30 @@ export default function PatientDashboardScreen() {
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Mi Anticonceptivo</Text>
+          <Text style={styles.sectionTitle}>Mi Médico</Text>
           <TouchableOpacity style={styles.sectionAction}>
-            <Text style={styles.sectionActionText}>Editar</Text>
+            <Text style={styles.sectionActionText}>Ver Perfil</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.contraceptiveCard}>
-          <View style={styles.contraceptiveHeader}>
-            <Pill size={24} color="#4a6fa5" />
-            <View style={styles.contraceptiveInfo}>
-              <Text style={styles.contraceptiveMethod}>{userData.contraceptiveMethod}</Text>
-              <Text style={styles.contraceptiveBrand}>{userData.brand}</Text>
-            </View>
+        <View style={styles.doctorCard}>
+          <Image source={{ uri: doctorData.image }} style={styles.doctorImage} />
+          <View style={styles.doctorInfo}>
+            <Text style={styles.doctorName}>{doctorData.name}</Text>
+            <Text style={styles.doctorSpecialty}>{doctorData.specialty}</Text>
+            <Text style={styles.doctorHospital}>{doctorData.hospital}</Text>
           </View>
-
-          <View style={styles.contraceptiveDetails}>
-            <View style={styles.contraceptiveDetailItem}>
-              <Text style={styles.contraceptiveDetailLabel}>Inicio de Caja Actual</Text>
-              <Text style={styles.contraceptiveDetailValue}>{userData.startDate}</Text>
-            </View>
-            <View style={styles.contraceptiveDetailItem}>
-              <Text style={styles.contraceptiveDetailLabel}>Cajas Restantes</Text>
-              <Text style={styles.contraceptiveDetailValue}>{userData.remainingBoxes}</Text>
-            </View>
-          </View>
-
-          <TouchableOpacity style={styles.reminderButton}>
-            <Text style={styles.reminderButtonText}>Configurar Recordatorio</Text>
+          <TouchableOpacity style={styles.messageButton}>
+            <MessageCircle size={20} color="#fff" />
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.appointmentCard}>
+          <CalendarIcon size={20} color="#4a6fa5" />
+          <View style={styles.appointmentInfo}>
+            <Text style={styles.appointmentLabel}>Próxima Cita</Text>
+            <Text style={styles.appointmentDate}>{doctorData.nextAppointment}</Text>
+          </View>
         </View>
       </View>
 
@@ -143,14 +160,43 @@ export default function PatientDashboardScreen() {
   const renderProfileTab = () => (
     <View style={styles.tabContent}>
       <Text style={styles.tabTitle}>Mi Perfil</Text>
-      {/* Profile content would go here */}
+      <View style={styles.profileSection}>
+        <Text style={styles.profileLabel}>Nombre:</Text>
+        <Text style={styles.profileValue}>{editableUserData.name}</Text>
+      </View>
+      <View style={styles.profileSection}>
+        <Text style={styles.profileLabel}>Apellido:</Text>
+        <Text style={styles.profileValue}>López</Text>
+      </View>
+      <View style={styles.profileSection}>
+        <Text style={styles.profileLabel}>Tipo de Anticonceptivo:</Text>
+        <Text style={styles.profileValue}>{editableUserData.contraceptiveMethod}</Text>
+      </View>
+      <TouchableOpacity style={styles.editButton} onPress={() => setIsModalVisible(true)}>
+        <Text style={styles.editButtonText}>Editar Información</Text>
+      </TouchableOpacity>
     </View>
   )
 
   const renderCalendarTab = () => (
     <View style={styles.tabContent}>
       <Text style={styles.tabTitle}>Calendario</Text>
-      {/* Calendar content would go here */}
+      <CalendarList
+        // Configura el calendario según tus necesidades
+        pastScrollRange={12}
+        futureScrollRange={12}
+        scrollEnabled={true}
+        showScrollIndicator={true}
+        onDayPress={(day) => {
+          console.log('selected day', day);
+        }}
+        markedDates={{
+          '2025-04-12': {selected: true, marked: true, selectedColor: 'blue'},
+          '2025-04-15': {marked: true},
+          '2025-04-16': {marked: true, dotColor: 'red', activeOpacity: 0},
+          '2025-04-21': {disabled: true, disableTouchEvent: true}
+        }}
+      />
     </View>
   )
 
@@ -194,6 +240,81 @@ export default function PatientDashboardScreen() {
           <Text style={[styles.tabButtonText, activeTab === "profile" && styles.tabButtonTextActive]}>Perfil</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Modal para editar información */}
+      <Modal
+        visible={isModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Editar Información</Text>
+            <TextInput
+              style={styles.input}
+              value={editableUserData.name}
+              onChangeText={(text) => handleInputChange('name', text)}
+              placeholder="Nombre"
+            />
+            <TextInput
+              style={styles.input}
+              value="López"  // Puedes cambiar esto para que sea editable también
+              placeholder="Apellido"
+            />
+            <TextInput
+              style={styles.input}
+              value={editableUserData.contraceptiveMethod}
+              onChangeText={(text) => handleInputChange('contraceptiveMethod', text)}
+              placeholder="Tipo de Anticonceptivo"
+            />
+            <TouchableOpacity style={styles.saveButton} onPress={() => setIsModalVisible(false)}>
+              <Text style={styles.saveButtonText}>Guardar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal para configurar recordatorio */}
+      <Modal
+        visible={isReminderModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsReminderModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Configurar Recordatorio</Text>
+            <TextInput
+              style={styles.input}
+              value={editableUserData.startDate}
+              onChangeText={(text) => handleInputChange('startDate', text)}
+              placeholder="Fecha de Inicio"
+            />
+            <TextInput
+              style={styles.input}
+              value={editableUserData.remainingBoxes.toString()}
+              onChangeText={(text) => handleInputChange('remainingBoxes', text)}
+              placeholder="Cajas Restantes"
+              keyboardType="numeric"
+            />
+            <View style={styles.switchContainer}>
+              <Switch
+                value={sendReminder}
+                onValueChange={setSendReminder}
+                trackColor={{ false: "#767577", true: "#4a6fa5" }}
+                thumbColor={sendReminder ? "#f4f3f4" : "#f4f3f4"}
+              />
+              <Text style={styles.switchLabel}>
+              Enviar automáticamente una solicitud de receta a mi médica cuando esté por quedarme sin mi método anticonceptivo.
+              </Text>
+            </View>
+            <TouchableOpacity style={styles.saveButton} onPress={() => setIsReminderModalVisible(false)}>
+              <Text style={styles.saveButtonText}>Guardar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -487,6 +608,81 @@ const styles = StyleSheet.create({
   tabButtonTextActive: {
     color: "#4a6fa5",
     fontWeight: "600",
+  },
+  profileSection: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 15,
+  },
+  profileLabel: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  profileValue: {
+    fontSize: 16,
+    color: "#666",
+  },
+  editButton: {
+    backgroundColor: "#4a6fa5",
+    borderRadius: 10,
+    padding: 12,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  editButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 20,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
+  input: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 15,
+  },
+  saveButton: {
+    backgroundColor: "#4a6fa5",
+    borderRadius: 10,
+    padding: 12,
+    alignItems: "center",
+    width: "100%",
+  },
+  saveButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  switchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  switchLabel: {
+    fontSize: 14,
+    color: "#333",
+    marginLeft: 10,
+    flex: 1,
   },
 })
 

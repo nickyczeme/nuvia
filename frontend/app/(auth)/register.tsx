@@ -1,174 +1,236 @@
-import { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { TextInput, Button, Text } from 'react-native-paper';
-import { router } from 'expo-router';
+"use client"
 
-export default function RegisterScreen() {
-  const [dni, setDni] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [selectedRole, setSelectedRole] = useState<'medico' | 'paciente' | null>(null);
+import { useState } from "react"
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
+import { Link, useRouter } from "expo-router"
+import { TextInput } from "react-native-gesture-handler"
 
-  const handleRegister = async () => {
-    try {
-      setLoading(true);
-      setError('');
+export default function SignupScreen() {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [dni, setDni] = useState("")
+  const [userType, setUserType] = useState("patient") // 'patient' or 'doctor'
+  const router = useRouter()
 
-      if (!selectedRole) {
-        setError('Por favor, selecciona tu rol');
-        return;
-      }
-
-      // Validación básica
-      if (password !== confirmPassword) {
-        setError('Las contraseñas no coinciden');
-        return;
-      }
-
-      // TODO: Implementar lógica de registro real aquí
-      console.log('Registro con:', { dni, email, password, role: selectedRole });
-
-      // Simular un delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Navegar según el rol seleccionado
-      if (selectedRole === 'medico') {
-        router.replace('/doctor/dashboard');
-      } else {
-        router.replace('/patient/profile');
-      }
-
-    } catch (err) {
-      setError('Error al registrarse. Por favor, intenta de nuevo.');
-      console.error('Error de registro:', err);
-    } finally {
-      setLoading(false);
+  const handleSignup = () => {
+    // In a real app, you would validate and register the user here
+    if (userType === "patient") {
+      router.push("/(patient)/profile")
+    } else {
+      router.push("/(doc)/dashboard")
     }
-  };
+  }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Crear Cuenta</Text>
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.logoContainer}>
+            <Image source={{ uri: "/placeholder.svg?height=80&width=80" }} style={styles.logo} />
+            <Text style={styles.appName}>Nuvia</Text>
+          </View>
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+          <View style={styles.formContainer}>
+            <Text style={styles.title}>Crear Cuenta</Text>
 
-      <TextInput
-        label="DNI"
-        value={dni}
-        onChangeText={setDni}
-        keyboardType="numeric"
-        style={styles.input}
-      />
+            <View style={styles.userTypeContainer}>
+              <TouchableOpacity
+                style={[styles.userTypeButton, userType === "patient" && styles.userTypeButtonActive]}
+                onPress={() => setUserType("patient")}
+              >
+                <Text style={[styles.userTypeText, userType === "patient" && styles.userTypeTextActive]}>Paciente</Text>
+              </TouchableOpacity>
 
-      <TextInput
-        label="Email"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        style={styles.input}
-      />
+              <TouchableOpacity
+                style={[styles.userTypeButton, userType === "doctor" && styles.userTypeButtonActive]}
+                onPress={() => setUserType("doctor")}
+              >
+                <Text style={[styles.userTypeText, userType === "doctor" && styles.userTypeTextActive]}>Médico</Text>
+              </TouchableOpacity>
+            </View>
 
-      <TextInput
-        label="Contraseña"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        style={styles.input}
-      />
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>DNI</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Ingresa tu DNI"
+                value={dni}
+                onChangeText={setDni}
+                keyboardType="number-pad"
+              />
+            </View>
 
-      <TextInput
-        label="Confirmar Contraseña"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
-        style={styles.input}
-      />
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Correo Electrónico</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="ejemplo@correo.com"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
 
-      <Text style={styles.roleTitle}>Selecciona tu rol:</Text>
-      <View style={styles.roleButtons}>
-        <Button
-          mode={selectedRole === 'medico' ? 'contained' : 'outlined'}
-          onPress={() => setSelectedRole('medico')}
-          style={[styles.roleButton, selectedRole === 'medico' && styles.selectedRole]}
-        >
-          Soy Médico
-        </Button>
-        <Button
-          mode={selectedRole === 'paciente' ? 'contained' : 'outlined'}
-          onPress={() => setSelectedRole('paciente')}
-          style={[styles.roleButton, selectedRole === 'paciente' && styles.selectedRole]}
-        >
-          Soy Paciente
-        </Button>
-      </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Contraseña</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Crea una contraseña"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+            </View>
 
-      <Button
-        mode="contained"
-        onPress={handleRegister}
-        loading={loading}
-        disabled={loading}
-        style={styles.button}
-      >
-        Registrarse
-      </Button>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Confirmar Contraseña</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Confirma tu contraseña"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+              />
+            </View>
 
-      <Button
-        mode="text"
-        onPress={() => router.push('/(auth)/login')}
-        style={styles.linkButton}
-      >
-        ¿Ya tienes cuenta? Inicia sesión
-      </Button>
-    </View>
-  );
+            <TouchableOpacity style={styles.button} onPress={handleSignup}>
+              <Text style={styles.buttonText}>Registrarse</Text>
+            </TouchableOpacity>
+
+            <View style={styles.loginContainer}>
+              <Text style={styles.loginText}>¿Ya tienes una cuenta? </Text>
+              <Link href="/(auth)/login" asChild>
+                <TouchableOpacity>
+                  <Text style={styles.loginLink}>Inicia Sesión</Text>
+                </TouchableOpacity>
+              </Link>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#f8f9fa",
+  },
+  scrollContent: {
+    flexGrow: 1,
     padding: 20,
-    justifyContent: 'center',
+  },
+  logoContainer: {
+    alignItems: "center",
+    marginVertical: 20,
+  },
+  logo: {
+    width: 80,
+    height: 80,
+    borderRadius: 16,
+  },
+  appName: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#4a6fa5",
+    marginTop: 8,
+  },
+  formContainer: {
+    backgroundColor: "white",
+    borderRadius: 15,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+    marginBottom: 20,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
+    color: "#333",
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: "center",
+  },
+  userTypeContainer: {
+    flexDirection: "row",
+    marginBottom: 20,
+    borderRadius: 10,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+  },
+  userTypeButton: {
+    flex: 1,
+    padding: 12,
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
+  },
+  userTypeButtonActive: {
+    backgroundColor: "#4a6fa5",
+  },
+  userTypeText: {
+    fontSize: 16,
+    color: "#666",
+  },
+  userTypeTextActive: {
+    color: "white",
+    fontWeight: "bold",
+  },
+  inputContainer: {
+    marginBottom: 15,
+  },
+  label: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 5,
   },
   input: {
-    marginBottom: 16,
+    backgroundColor: "#f5f5f5",
+    borderRadius: 10,
+    padding: 15,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
   },
   button: {
-    marginTop: 8,
+    backgroundColor: "#4a6fa5",
+    borderRadius: 10,
+    padding: 15,
+    alignItems: "center",
+    marginTop: 10,
+    marginBottom: 15,
   },
-  linkButton: {
-    marginTop: 16,
-  },
-  error: {
-    color: 'red',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  roleTitle: {
+  buttonText: {
+    color: "white",
     fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-    textAlign: 'center',
+    fontWeight: "bold",
   },
-  roleButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 20,
+  loginContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
   },
-  roleButton: {
-    flex: 1,
-    marginHorizontal: 8,
+  loginText: {
+    color: "#666",
+    fontSize: 14,
   },
-  selectedRole: {
-    backgroundColor: '#6200ee',
+  loginLink: {
+    color: "#4a6fa5",
+    fontSize: 14,
+    fontWeight: "bold",
   },
-}); 
+})

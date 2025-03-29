@@ -1,7 +1,6 @@
 from django.urls import path
-from .views import RegistroUsuarioView, LoginUsuarioView
+from .views import DeepSeekChatView
 
 urlpatterns = [
-    path('registro/', RegistroUsuarioView.as_view(), name='registro'),
-    path('login/', LoginUsuarioView.as_view(), name='login'),
+    path('api/chat/', DeepSeekChatView.as_view(), name='chat'),
 ] 

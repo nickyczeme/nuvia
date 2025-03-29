@@ -4,6 +4,11 @@ from rest_framework.permissions import AllowAny
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import UsuarioRegisterSerializer, UsuarioLoginSerializer
+from .deepseek_client import get_deepseek_response
+from rest_framework.views import APIView
+import logging
+
+logger = logging.getLogger(__name__)
 
 class RegistroUsuarioView(generics.CreateAPIView):
     serializer_class = UsuarioRegisterSerializer
@@ -32,3 +37,15 @@ class LoginUsuarioView(generics.GenericAPIView):
                 }
             })
         return Response({'error': 'Credenciales inválidas'}, status=status.HTTP_401_UNAUTHORIZED)
+
+class DeepSeekChatView(APIView):
+    def post(self, request):
+        user_message = request.data.get('message')
+        if not user_message:
+            return Response({'error': 'No se proporcionó un mensaje.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            reply = get_deepseek_response(user_message)
+            return Response({'reply': reply})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

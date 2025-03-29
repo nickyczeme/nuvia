@@ -54,6 +54,22 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     # If you want to require other fields when creating superusers, list them here
     REQUIRED_FIELDS = []  # e.g. ['email']
 
+    # Agregamos related_name para evitar conflictos
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='usuario_set',
+        blank=True,
+        help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
+        verbose_name='groups',
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='usuario_set',
+        blank=True,
+        help_text='Specific permissions for this user.',
+        verbose_name='user permissions',
+    )
+
     def __str__(self):
         return f"Usuario DNI: {self.dni}"
 

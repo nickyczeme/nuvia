@@ -114,6 +114,7 @@ class Paciente(Usuario):
     doctor_asignado = models.ForeignKey(
         Doctor,
         on_delete=models.CASCADE,
+        null=True,
         related_name='pacientes'
     )
 

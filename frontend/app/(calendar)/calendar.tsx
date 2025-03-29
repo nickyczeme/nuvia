@@ -1,13 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Link, useRouter } from "expo-router"
+import { ChevronLeft, ChevronRight } from "lucide-react-native"
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native"
+import { Button } from "react-native-paper"
 
 export default function CalendarPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
+  const router = useRouter()
 
   const monthNames = [
     "January",
@@ -53,7 +54,7 @@ export default function CalendarPage() {
 
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push(<div key={`empty-${i}`} className="h-10 w-10"></div>)
+      days.push(<View key={`empty-${i}`} style={styles.dayCell} />)
     }
 
     // Sample period data (for demonstration)
@@ -63,24 +64,24 @@ export default function CalendarPage() {
 
     // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
-      let bgColor = ""
-      let textColor = ""
+      let bgColor = styles.dayCell
+      let textColor = styles.dayText
 
       if (periodDays.includes(day)) {
-        bgColor = "bg-red-100"
-        textColor = "text-red-600"
+        bgColor = { ...styles.dayCell, backgroundColor: '#fee2e2' }
+        textColor = { ...styles.dayText, color: '#dc2626' }
       } else if (day === ovulationDay) {
-        bgColor = "bg-blue-100"
-        textColor = "text-blue-600"
+        bgColor = { ...styles.dayCell, backgroundColor: '#dbeafe' }
+        textColor = { ...styles.dayText, color: '#2563eb' }
       } else if (fertileDays.includes(day)) {
-        bgColor = "bg-blue-50"
-        textColor = "text-blue-500"
+        bgColor = { ...styles.dayCell, backgroundColor: '#eff6ff' }
+        textColor = { ...styles.dayText, color: '#3b82f6' }
       }
 
       days.push(
-        <div key={day} className={`h-10 w-10 rounded-full flex items-center justify-center ${bgColor} ${textColor}`}>
-          {day}
-        </div>,
+        <View key={day} style={bgColor}>
+          <Text style={textColor}>{day}</Text>
+        </View>
       )
     }
 
@@ -88,60 +89,83 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="container max-w-md mx-auto px-4 py-8">
-      <header className="mb-6">
-        <div className="flex items-center mb-4">
-          <Link href="/">
-            <Button variant="ghost" size="sm" onPress={() => {}}>
-              <div className="flex items-center gap-2">
-                <ChevronLeft className="h-5 w-5" />
-                <span>Back</span>
-              </div>
-            </Button>
-          </Link>
-          <h1 className="text-xl font-bold text-center flex-1">Calendar</h1>
-        </div>
-      </header>
-      <Card>
-        <CardContent>
-          <div className="flex justify-between items-center mb-4">
-            <Button onPress={prevMonth} variant="ghost" size="sm">
-                <ChevronLeft className="h-5 w-5" />
-            </Button>
-            <h2 className="text-lg font-medium">
-              {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-            </h2>
-            <Button variant="ghost" size="sm" onPress={nextMonth}>
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          </div>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <View style={styles.headerRow}>
+          <Button
+            mode="text"
+            onPress={() => router.back()}
+            icon="chevron-left"
+          >
+            Back
+          </Button>
+        </View>
+        <Text style={styles.monthTitle}>
+          {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+        </Text>
+      </View>
 
-          <div className="grid grid-cols-7 gap-1 text-center mb-2">
-            {daysOfWeek.map((day) => (
-              <div key={day} className="text-xs font-medium text-muted-foreground">
-                {day}
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-7 gap-1 text-center">{renderCalendar()}</div>
-        </CardContent>
-      </Card>
-
-      <div className="mt-6 space-y-2">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full bg-red-100"></div>
-          <span className="text-sm">Period</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full bg-blue-100"></div>
-          <span className="text-sm">Ovulation</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full bg-blue-50"></div>
-          <span className="text-sm">Fertile Window</span>
-        </div>
-      </div>
-    </div>
+      <View style={styles.calendar}>
+        <View style={styles.weekDays}>
+          {daysOfWeek.map((day) => (
+            <Text key={day} style={styles.weekDay}>
+              {day}
+            </Text>
+          ))}
+        </View>
+        <View style={styles.daysGrid}>
+          {renderCalendar()}
+        </View>
+      </View>
+    </View>
   )
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#fff',
+  },
+  header: {
+    marginBottom: 24,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  monthTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  calendar: {
+    flex: 1,
+  },
+  weekDays: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  weekDay: {
+    width: 40,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  daysGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  dayCell: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  dayText: {
+    fontSize: 16,
+  },
+})

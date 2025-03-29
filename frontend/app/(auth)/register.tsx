@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import axios from "axios"
 import {
   View,
   Text,
@@ -16,19 +17,37 @@ import { Link, useRouter } from "expo-router"
 import { TextInput } from "react-native-gesture-handler"
 
 export default function SignupScreen() {
+  const [nombre, setNombre] = useState("")
+  const [apellido, setApellido] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [dni, setDni] = useState("")
-  const [userType, setUserType] = useState("patient") // 'patient' or 'doctor'
+  const [userType, setUserType] = useState("paciente")
   const router = useRouter()
 
-  const handleSignup = () => {
-    // In a real app, you would validate and register the user here
-    if (userType === "patient") {
-      router.push("/(patient)/profile")
-    } else {
-      router.push("/(doc)/dashboard")
+  const handleSignup = async () => {
+    try {
+      const payload = {
+        dni: parseInt(dni),
+        email,
+        password,
+        password2: confirmPassword,
+        tipo_usuario: userType,
+        nombre,
+        apellido,
+      }
+
+      const response = await axios.post("http://127.0.0.1:8000/api/usuarios/registro/", payload)
+      console.log("Registro exitoso:", response.data)
+
+      if (userType === "patient") {
+        router.push("/(patient)/profile")
+      } else {
+        router.push("/(doc)/dashboard")
+      }
+    } catch (error) {
+      console.error("Error en el registro:", error.response?.data || error.message)
     }
   }
 
@@ -45,19 +64,44 @@ export default function SignupScreen() {
             <Text style={styles.title}>Crear Cuenta</Text>
 
             <View style={styles.userTypeContainer}>
-              <TouchableOpacity
-                style={[styles.userTypeButton, userType === "patient" && styles.userTypeButtonActive]}
-                onPress={() => setUserType("patient")}
-              >
-                <Text style={[styles.userTypeText, userType === "patient" && styles.userTypeTextActive]}>Paciente</Text>
-              </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.userTypeButton, userType === "paciente" && styles.userTypeButtonActive]}
+              onPress={() => setUserType("paciente")}
+            >
+              <Text style={[styles.userTypeText, userType === "paciente" && styles.userTypeTextActive]}>
+                Paciente
+              </Text>
+            </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.userTypeButton, userType === "doctor" && styles.userTypeButtonActive]}
-                onPress={() => setUserType("doctor")}
-              >
-                <Text style={[styles.userTypeText, userType === "doctor" && styles.userTypeTextActive]}>Médico</Text>
-              </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.userTypeButton, userType === "doctor" && styles.userTypeButtonActive]}
+              onPress={() => setUserType("doctor")}
+            >
+              <Text style={[styles.userTypeText, userType === "doctor" && styles.userTypeTextActive]}>
+                Médico
+              </Text>
+            </TouchableOpacity>
+
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Nombre</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Ingresa tu nombre"
+                value={nombre}
+                onChangeText={setNombre}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Apellido</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Ingresa tu apellido"
+                value={apellido}
+                onChangeText={setApellido}
+              />
             </View>
 
             <View style={styles.inputContainer}>

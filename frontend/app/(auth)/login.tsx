@@ -10,25 +10,61 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Link, useRouter } from "expo-router"
-import { TextInput } from "react-native-gesture-handler"
-import { GestureHandlerRootView } from 'react-native-gesture-handler'  // Import GestureHandlerRootView
+import { TextInput, GestureHandlerRootView } from "react-native-gesture-handler"
+import axios from "axios"
+import Constants from 'expo-constants';
+
+const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:8000';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState("")
+  const [dni, setDni] = useState("")
   const [password, setPassword] = useState("")
   const router = useRouter()
 
-  const handleLogin = () => {
-    // In a real app, you would validate and authenticate here
-    // For now, we'll just navigate to the appropriate dashboard
-    router.push("/(patient)/dashboard")
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post(`${API_URL}/api/usuarios/login/`, {
+        dni: parseInt(dni),
+        password,
+      })
+
+      const { access, refresh, user } = response.data
+
+      console.log("Login exitoso:", user)
+
+      // Optional: store token if needed
+
+      if (user.tipo_usuario === "paciente") {
+        router.push({
+          pathname: "/(patient)/dashboard",
+          params: {
+            tipo: user.tipo_usuario,
+            nombre: user.nombre,
+          },
+        })
+      } else if (user.tipo_usuario === "doctor") {
+        router.push({
+          pathname: "/(doc)/dashboard",
+          params: {
+            tipo: user.tipo_usuario,
+            nombre: user.nombre,
+          },
+        })
+      } else {
+        Alert.alert("Error", "Tipo de usuario desconocido.")
+      }
+    } catch (error) {
+      console.error("Error de login:", error.response?.data || error.message)
+      Alert.alert("Error de login", "DNI o contraseña incorrectos.")
+    }
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>  {/* Wrap everything inside GestureHandlerRootView */}
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.container}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -41,14 +77,13 @@ export default function LoginScreen() {
               <Text style={styles.title}>Iniciar Sesión</Text>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Correo Electrónico</Text>
+                <Text style={styles.label}>DNI</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="ejemplo@correo.com"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
+                  placeholder="Ingresa tu DNI"
+                  value={dni}
+                  onChangeText={setDni}
+                  keyboardType="number-pad"
                 />
               </View>
 
@@ -179,4 +214,3 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 })
-

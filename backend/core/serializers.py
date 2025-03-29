@@ -51,6 +51,16 @@ class UsuarioRegisterSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if attrs['password'] != attrs.pop('password2'):
             raise serializers.ValidationError({"password": "Las contraseñas no coinciden."})
+
+        # Condiciones para validaciones de campos según tipo de usuario
+        tipo_usuario = attrs.get('tipo_usuario')
+        if tipo_usuario == 'doctor':
+            if not attrs.get('matricula'):
+                raise serializers.ValidationError({"matricula": "La matrícula es obligatoria para los doctores."})
+        elif tipo_usuario == 'paciente':
+            if not attrs.get('obra_social'):
+                raise serializers.ValidationError({"obra_social": "La obra social es obligatoria para los pacientes."})
+
         return attrs
 
     def create(self, validated_data):
@@ -92,16 +102,3 @@ class UsuarioRegisterSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
-
-
-class UsuarioLoginSerializer(serializers.Serializer):
-    dni = serializers.IntegerField()
-    password = serializers.CharField(write_only=True)
-
-class NotificationTokenSerializer(serializers.Serializer):
-    token = serializers.CharField(max_length=255)
-    user_id = serializers.IntegerField()
-
-class NotificationCreateSerializer(serializers.Serializer):
-    mensaje = serializers.CharField()
-    fecha_programada = serializers.DateTimeField(required=False)

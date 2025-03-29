@@ -34,9 +34,11 @@ export default function PatientDashboardScreen() {
           }
         })
 
+        console.log('User data response:', response.data)
+
         setUserData({
           ...userData,
-          name: `${response.data.nombre} ${response.data.apellido}`,
+          name: `${response.data.nombre || ''} ${response.data.apellido || ''}`.trim(),
         })
         setLoading(false)
       } catch (error) {
@@ -187,7 +189,7 @@ export default function PatientDashboardScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.greeting}>Hola, {userData.nombre}</Text>
+        <Text style={styles.greeting}>Hola, {userData.name}</Text>
         <TouchableOpacity style={styles.menuButton}>
           <Menu size={24} color="#333" />
         </TouchableOpacity>

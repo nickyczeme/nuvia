@@ -17,6 +17,7 @@ import { Link, useRouter } from "expo-router"
 import { TextInput, GestureHandlerRootView } from "react-native-gesture-handler"
 import axios from "axios"
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:8000';
 
@@ -34,9 +35,12 @@ export default function LoginScreen() {
 
       const { access, refresh, user } = response.data
 
-      console.log("Login exitoso:", user)
+      // Store the token
+      await AsyncStorage.setItem('token', access);
+      // Set default authorization header
+      axios.defaults.headers.common['Authorization'] = `Bearer ${access}`;
 
-      // Optional: store token if needed
+      console.log("Login exitoso:", user)
 
       if (user.tipo_usuario === "paciente") {
         router.push({

@@ -18,6 +18,7 @@ import { Link, useRouter } from "expo-router"
 import { TextInput } from "react-native-gesture-handler"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:8000';
 
@@ -43,8 +44,19 @@ export default function SignupScreen() {
         apellido,
       }
 
-      const response = await axios.post(`${API_URL}/api/usuarios/registro/`, payload)
-      console.log("Registro exitoso:", response.data)
+      // First register the user
+      await axios.post(`${API_URL}/api/usuarios/registro/`, payload)
+
+      // Then login to get the token
+      const loginResponse = await axios.post(`${API_URL}/api/usuarios/login/`, {
+        dni: parseInt(dni),
+        password,
+      });
+
+      // Store the token
+      const { access } = loginResponse.data;
+      await AsyncStorage.setItem('token', access);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${access}`;
 
       if (userType === "paciente") {
         router.push("/(patient)/dashboard")

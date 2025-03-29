@@ -1,15 +1,18 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import { TextInput } from "react-native-gesture-handler"
 import { ChevronLeft, Send } from "lucide-react-native"
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+
 export default function ChatbotScreen() {
   const router = useRouter()
   const [message, setMessage] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
   const [messages, setMessages] = useState([
     {
       id: "1",
@@ -19,10 +22,10 @@ export default function ChatbotScreen() {
   ])
   const flatListRef = useRef(null)
 
-  const handleSend = () => {
-    if (message.trim() === "") return
+  const handleSend = async () => {
+    if (message.trim() === "" || isLoading) return
 
-    // Add user message
+    // Agrega mensaje del usuario
     const userMessage = {
       id: Date.now().toString(),
       text: message,
@@ -31,76 +34,72 @@ export default function ChatbotScreen() {
 
     setMessages((prevMessages) => [...prevMessages, userMessage])
     setMessage("")
+    setIsLoading(true)
 
-    // Simulate bot response after a short delay
-    setTimeout(() => {
+    try {
+      console.log('Intentando conectar a:', `${API_URL}/api/chat/`);
+      const response = await fetch(`${API_URL}/api/chat/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: userMessage.text }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json()
+
       const botResponse = {
         id: (Date.now() + 1).toString(),
-        text: getBotResponse(message),
+        text: data.reply || "No se obtuvo respuesta.",
         sender: "bot",
       }
 
       setMessages((prevMessages) => [...prevMessages, botResponse])
-    }, 1000)
-  }
+    } catch (error: any) {
+      console.error('Error completo:', error);
+      let errorMessage = "Ocurrió un error. Intenta nuevamente.";
+      
+      if (error.message.includes("Failed to fetch")) {
+        errorMessage = "No se pudo conectar al servidor. Asegúrate de que el backend esté corriendo en el puerto 8000.";
+      } else {
+        errorMessage = error.message;
+      }
 
-  // Simple bot response logic - in a real app, this would be more sophisticated
-  const getBotResponse = (userMessage: string) => {
-    const lowerCaseMessage = userMessage.toLowerCase()
-
-    if (lowerCaseMessage.includes("anticonceptivo") || lowerCaseMessage.includes("pastilla")) {
-      return "Los anticonceptivos hormonales como las pastillas, parches o anillos funcionan principalmente evitando la ovulación. Es importante tomarlos regularmente según las indicaciones de tu médico."
-    } else if (
-      lowerCaseMessage.includes("ciclo") ||
-      lowerCaseMessage.includes("periodo") ||
-      lowerCaseMessage.includes("menstrua")
-    ) {
-      return "El ciclo menstrual promedio dura 28 días, pero puede variar entre 21 y 35 días. La menstruación suele durar de 3 a 7 días. Si notas cambios significativos en tu ciclo, es recomendable consultar con tu médico."
-    } else if (lowerCaseMessage.includes("efecto") || lowerCaseMessage.includes("secundario")) {
-      return "Los efectos secundarios comunes de los anticonceptivos pueden incluir náuseas, sensibilidad en los senos, dolores de cabeza y cambios de humor. La mayoría suelen disminuir después de unos meses de uso. Si persisten, consulta con tu médico."
-    } else if (lowerCaseMessage.includes("olvid") || lowerCaseMessage.includes("olvidé")) {
-      return "Si olvidaste tomar una pastilla, tómala tan pronto como lo recuerdes. Si han pasado más de 24 horas, sigue las instrucciones específicas del prospecto de tu anticonceptivo o consulta con tu médico. Puede ser necesario usar un método anticonceptivo adicional."
-    } else {
-      return "No estoy seguro de entender tu pregunta. ¿Podrías reformularla? Puedo ayudarte con información sobre ciclo menstrual, anticonceptivos y sus efectos."
+      const errorResponse = {
+        id: (Date.now() + 1).toString(),
+        text: errorMessage,
+        sender: "bot",
+      }
+      setMessages((prevMessages) => [...prevMessages, errorResponse])
+    } finally {
+      setIsLoading(false)
     }
   }
+
   const renderMessage = ({ item }: { item: { sender: string; text: string; id: string } }) => (
     <View style={[
-      { 
-        padding: 10,
-        marginVertical: 5,
-        marginHorizontal: 10,
-        maxWidth: '80%',
-        borderRadius: 10
-      },
-      item.sender === "user" ? {
-        alignSelf: 'flex-end',
-        backgroundColor: '#007AFF',
-      } : {
-        alignSelf: 'flex-start', 
-        backgroundColor: '#E9ECEF',
-      }
+      styles.messageContainer,
+      item.sender === "user" ? styles.userMessage : styles.botMessage
     ]}>
       <Text style={[
-        {
-          fontSize: 16,
-          lineHeight: 20
-        },
-        item.sender === "user" ? {
-          color: '#fff'
-        } : {
-          color: '#212529'
-        }
+        styles.messageText,
+        item.sender === "user" ? styles.userMessageText : styles.botMessageText
       ]}>{item.text}</Text>
     </View>
   )
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 15, backgroundColor: "white", borderBottomWidth: 1, borderBottomColor: "#e0e0e0" }}>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <ChevronLeft size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>MediBot</Text>
+        <Text style={styles.headerTitle}>MediBot</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -109,7 +108,7 @@ export default function ChatbotScreen() {
         data={messages}
         renderItem={renderMessage}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: 15, paddingBottom: 20 }}
+        contentContainerStyle={styles.messagesContainer}
         onContentSizeChange={() => {
           if (flatListRef.current) {
             (flatListRef.current as any).scrollToEnd({ animated: true });
@@ -117,41 +116,33 @@ export default function ChatbotScreen() {
         }}
       />
 
+      {isLoading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color="#4a6fa5" />
+          <Text style={styles.loadingText}>MediBot está escribiendo...</Text>
+        </View>
+      )}
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
-        <View style={{
-          flexDirection: "row",
-          alignItems: "center",
-          padding: 10,
-          backgroundColor: "white",
-          borderTopWidth: 1,
-          borderTopColor: "#e0e0e0"
-        }}>
+        <View style={styles.inputContainer}>
           <TextInput
-            style={{
-              flex: 1,
-              padding: 10,
-              backgroundColor: "#f8f9fa",
-              borderRadius: 20,
-              marginRight: 10
-            }}
+            style={styles.input}
             placeholder="Escribe tu pregunta aquí..."
             value={message}
             onChangeText={setMessage}
             multiline
+            editable={!isLoading}
           />
           <TouchableOpacity 
-            style={{
-              backgroundColor: '#4a6fa5',
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              justifyContent: 'center',
-              alignItems: 'center'
-            }} 
+            style={[
+              styles.sendButton,
+              (!message.trim() || isLoading) && styles.sendButtonDisabled
+            ]} 
             onPress={handleSend}
+            disabled={!message.trim() || isLoading}
           >
             <Send size={20} color="#fff" />
           </TouchableOpacity>
@@ -207,27 +198,13 @@ const styles = StyleSheet.create({
   },
   messageText: {
     fontSize: 16,
-    color: "#333",
+    lineHeight: 20,
   },
-  userMessageContainer: {
-    alignSelf: "flex-end",
-    backgroundColor: "#4a6fa5",
-    borderBottomRightRadius: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+  userMessageText: {
+    color: "#fff",
   },
-  botMessageContainer: {
-    alignSelf: "flex-start",
-    backgroundColor: "white", 
-    borderBottomLeftRadius: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+  botMessageText: {
+    color: "#212529",
   },
   inputContainer: {
     flexDirection: "row",
@@ -238,21 +215,33 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    padding: 10,
+    backgroundColor: "#f8f9fa",
     borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
+    marginRight: 10,
     maxHeight: 100,
     fontSize: 16,
   },
   sendButton: {
-    backgroundColor: "#4a6fa5",
+    backgroundColor: '#4a6fa5',
     width: 40,
     height: 40,
     borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: 10,
-    alignSelf: "flex-end",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-})
+  sendButtonDisabled: {
+    backgroundColor: '#a0a0a0',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+  },
+  loadingText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#4a6fa5',
+  },
+});

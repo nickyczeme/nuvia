@@ -11,6 +11,8 @@ import logging
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.views import APIView
 from .models import Usuario, Paciente, Doctor, Anticonceptivo
+from rest_framework.exceptions import PermissionDenied
+from datetime import date
 
 logger = logging.getLogger(__name__)
 
@@ -30,10 +32,11 @@ class LoginUsuarioView(generics.GenericAPIView):
         if user:
             refresh = RefreshToken.for_user(user)
             # Determinar el tipo de usuario basado en la instancia
-            if hasattr(user, 'paciente'):
-                tipo_usuario = "paciente"
-            elif hasattr(user, 'doctor'):
+            # Explicitly check if the user is a Doctor or Paciente
+            if Doctor.objects.filter(id=user.id).exists():
                 tipo_usuario = "doctor"
+            elif Paciente.objects.filter(id=user.id).exists():
+                tipo_usuario = "paciente"
             else:
                 tipo_usuario = "usuario"
             return Response({
@@ -222,4 +225,33 @@ def get_anticonceptivos(request):
         }
         for a in anticonceptivos
     ]
+    return Response(data)
+
+
+def calculate_age(born):
+    today = date.today()
+    return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_doctor_patients(request):
+    try:
+        # Retrieve the Doctor instance using the logged-in user's PK.
+        doctor = Doctor.objects.get(pk=request.user.pk)
+    except Doctor.DoesNotExist:
+        raise PermissionDenied("Solo los doctores pueden acceder a esta vista.")
+
+    patients = doctor.pacientes.all()  # Using the related_name from Paciente.doctor_asignado
+    data = []
+    for p in patients:
+        age = None
+        if p.fecha_nacimiento:
+            age = calculate_age(p.fecha_nacimiento)
+        data.append({
+            "id": p.id,
+            "name": f"{p.nombre} {p.apellido}",
+            "age": age,
+            "lastVisit": "",  # Add logic if you store last visit info
+            "nextVisit": "",  # Add logic if you store next visit info
+        })
     return Response(data)

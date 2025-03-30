@@ -1,19 +1,34 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, ScrollView } from "react-native"
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  ScrollView,
+  Alert,
+  Linking
+} from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
-import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import { User, FileText, MessageCircle, Calendar, Menu, Check, X } from "lucide-react-native"
+import { GestureHandlerRootView } from "react-native-gesture-handler"
+import {
+  User,
+  FileText,
+  Check,
+  X,
+  Calendar as CalendarIcon,
+  Menu
+} from "lucide-react-native"
 import axios from "axios"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import Constants from "expo-constants"
 
-// Cambia esta URL a la de tu servidor (o toma de extra.apiUrl si lo configuras)
-const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:8000';
+const API_URL = Constants.expoConfig?.extra?.apiUrl || "http://localhost:8000"
 
-type PrescriptionStatus = 'pendiente' | 'aceptado' | 'rechazado'
+type PrescriptionStatus = "pendiente" | "aceptado" | "rechazado"
 
 type PrescriptionRequest = {
   id: number
@@ -23,230 +38,208 @@ type PrescriptionRequest = {
     nombre: string
     apellido: string
   }
-  anticonceptivo: {
+  anticonceptivo?: {
     marca: string
+    tipo: string
   }
-  image?: string
+  archivo?: string
+}
+
+type Patient = {
+  id: string
+  name: string
+  age: number | null
+  lastVisit: string
+  nextVisit: string
 }
 
 export default function DoctorDashboardScreen() {
   const router = useRouter()
-
   const [activeTab, setActiveTab] = useState("patients")
-  const [showPatientRequests, setShowPatientRequests] = useState(false)
   const [prescriptionRequests, setPrescriptionRequests] = useState<PrescriptionRequest[]>([])
-  const [loading, setLoading] = useState(true)
+  const [patients, setPatients] = useState<Patient[]>([])
+  const [loadingPrescriptions, setLoadingPrescriptions] = useState(true)
+  const [loadingPatients, setLoadingPatients] = useState(true)
 
-  // Al montar el componente, cargamos las prescripciones
+  // Fetch prescription requests
   useEffect(() => {
     const fetchPrescriptions = async () => {
       try {
-        const token = await AsyncStorage.getItem('token')
+        const token = await AsyncStorage.getItem("token")
         if (!token) {
           console.error("No token found")
-
           return
         }
-        // GET a /api/prescriptions/
         const response = await axios.get(`${API_URL}/api/prescriptions/`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          headers: { Authorization: `Bearer ${token}` }
         })
         console.log("Prescriptions response:", response.data)
         setPrescriptionRequests(response.data)
       } catch (error) {
         console.error("Error fetching prescriptions:", error)
       } finally {
-
+        setLoadingPrescriptions(false)
       }
     }
     fetchPrescriptions()
   }, [])
 
-  // PATCH para actualizar estado de la receta
+  // Fetch patients for the logged-in doctor
+  useEffect(() => {
+    const fetchPatients = async () => {
+      try {
+        const token = await AsyncStorage.getItem("token")
+        if (!token) {
+          console.error("No token found")
+          return
+        }
+        const response = await axios.get(`${API_URL}/api/usuarios/doctor/patients/`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        console.log("Patients response:", response.data)
+        setPatients(response.data || [])
+      } catch (error) {
+        console.error("Error fetching patients:", error)
+      } finally {
+        setLoadingPatients(false)
+      }
+    }
+    fetchPatients()
+  }, [])
+
+  // Update prescription status via PATCH
   const updatePrescriptionStatus = async (id: number, status: PrescriptionStatus) => {
     try {
-      const token = await AsyncStorage.getItem('token')
+      const token = await AsyncStorage.getItem("token")
       if (!token) {
         console.error("No token for patch")
         return
       }
-      const res = await axios.patch(`${API_URL}/api/prescriptions/${id}/update/`, { status }, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      // Reemplazar en el state local
+      const res = await axios.patch(
+        `${API_URL}/api/prescriptions/${id}/update/`,
+        { status },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      // Replace updated prescription in local state
       setPrescriptionRequests(prev =>
-        prev.map(p => p.id === id ? res.data : p)
+        prev.map(p => (p.id === id ? res.data : p))
       )
     } catch (err) {
       console.error("Error updating prescription", err)
     }
   }
 
-  // Filtramos por pendientes vs no pendientes
-  const pendingRequests = prescriptionRequests.filter(p => p.status === 'pendiente')
-  const doneRequests = prescriptionRequests.filter(p => p.status !== 'pendiente')
-
+  // Color styles for prescription statuses
   const statusStyle = {
-    pendiente: { color: "#f0ad4e" },   // Amarillo anaranjado para pendiente
-    aceptado: { color: "#5cb85c" },     // Verde para aceptado
-    rechazado: { color: "#d9534f" }      // Rojo para rechazado
-  };
+    pendiente: { color: "#f0ad4e" },
+    aceptado: { color: "#5cb85c" },
+    rechazado: { color: "#d9534f" }
+  }
 
-  // EJEMPLO: supuestos "patientRequests" y "patients" (si querés mantenerlos mocks)
-  const patientRequests = [
-    { id: "1", name: "María López", age: 28, date: "29/03/2025", image: "/placeholder.svg?height=50&width=50" },
-    { id: "2", name: "Laura Martínez", age: 32, date: "28/03/2025", image: "/placeholder.svg?height=50&width=50" },
-  ]
-
-  const patients = [
-    { id: "1", name: "Julia Rodríguez", age: 30, lastVisit: "15/02/2025", nextVisit: "15/04/2025", image: "/placeholder.svg?height=50&width=50" },
-    { id: "2", name: "Ana Gómez", age: 27, lastVisit: "10/03/2025", nextVisit: "10/05/2025", image: "/placeholder.svg?height=50&width=50" },
-  ]
-
-  // Render para las solicitudes “pacientes” (mock)
-  const renderPatientRequestItem = ({ item }: { item: { image: string; name: string } }) => (
-    <View style={styles.requestCard}>
-      <Image source={{ uri: item.image }} style={styles.requestImage} />
-      <View style={styles.requestInfo}>
-        <Text style={styles.requestName}>{item.name}</Text>
-        <Text style={styles.requestDetails}>Solicitud pendiente</Text>
-      </View>
-      <View style={styles.requestActions}>
-        <TouchableOpacity style={styles.acceptButton}>
-          <Check size={20} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.rejectButton}>
-          <X size={20} color="#fff" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  )
-
-  // Render de cada prescripción real
+  // Render each prescription request item
   const renderPrescriptionRequestItem = ({ item }: { item: PrescriptionRequest }) => (
-
     <View style={styles.requestCard}>
       <View style={styles.requestInfo}>
         <Text style={styles.requestName}>
           {item.paciente.nombre} {item.paciente.apellido}
         </Text>
         <Text style={styles.requestDetails}>
-        Marca: {item.anticonceptivo?.marca || "N/A"} • Método: {item.anticonceptivo?.tipo || "N/A"} • {(new Date(item.fecha)).toLocaleDateString()}
+          Marca: {item.anticonceptivo?.marca || "N/A"} • Método: {item.anticonceptivo?.tipo || "N/A"} •{" "}
+          {(new Date(item.fecha)).toLocaleDateString()}
         </Text>
         <Text style={[styles.requestDetails, statusStyle[item.status]]}>
           {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
         </Text>
       </View>
-      {item.status === 'pendiente' && (
+      {item.status === "pendiente" && (
         <View style={styles.requestActions}>
           <TouchableOpacity
             style={styles.acceptButton}
-            onPress={() => updatePrescriptionStatus(item.id, 'aceptado')}
+            onPress={() => updatePrescriptionStatus(item.id, "aceptado")}
           >
             <Check size={20} color="#fff" />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.rejectButton}
-            onPress={() => updatePrescriptionStatus(item.id, 'rechazado')}
+            onPress={() => updatePrescriptionStatus(item.id, "rechazado")}
           >
             <X size={20} color="#fff" />
           </TouchableOpacity>
         </View>
       )}
+      {item.archivo && (
+        <TouchableOpacity
+          style={styles.downloadButton}
+          onPress={() => {
+            Linking.openURL(item.archivo).catch(err => {
+              console.error("Error al descargar archivo:", err)
+              Alert.alert("Error", "No se pudo descargar el archivo.")
+            })
+          }}
+        >
+          <Text style={styles.downloadButtonText}>Descargar archivo</Text>
+        </TouchableOpacity>
+      )}
     </View>
   )
 
-
-  // Render de cada paciente (mock)
-  const renderPatientItem = ({ item }: { item: { id: string; name: string; age: number; lastVisit: string; nextVisit: string; image: string } }) => (
+  // Render each patient item (real data)
+  const renderPatientItem = ({ item }: { item: Patient }) => (
     <TouchableOpacity style={styles.patientCard}>
       <View style={styles.iconContainer}>
         <User size={50} color="#4a6fa5" />
       </View>
       <View style={styles.patientInfo}>
         <Text style={styles.patientName}>{item.name}</Text>
-        <Text style={styles.patientAge}>{item.age} años</Text>
-        <View style={styles.patientVisits}>
-          <Text style={styles.patientVisitLabel}>Última visita: </Text>
-          <Text style={styles.patientVisitDate}>{item.lastVisit}</Text>
-        </View>
-      </View>
-      <View style={styles.patientActions}>
-        <TouchableOpacity style={styles.patientActionButton}>
-          <MessageCircle size={18} color="#4a6fa5" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.patientActionButton}>
-          <Calendar size={18} color="#4a6fa5" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.patientActionButton}>
-          <FileText size={18} color="#4a6fa5" />
-        </TouchableOpacity>
+        {item.age !== null && <Text style={styles.patientAge}>{item.age} años</Text>}
       </View>
     </TouchableOpacity>
   )
 
-  // Tab "patients"
+  // Patients Tab: shows real patients or a friendly message if none exist
   const renderPatientsTab = () => (
     <View style={styles.tabContent}>
-      {/* <TouchableOpacity
-        style={styles.sectionHeader}
-        onPress={() => setShowPatientRequests(!showPatientRequests)}
-      >
-        <Text style={styles.sectionTitle}>Solicitudes de Pacientes (mock)</Text>
-      </TouchableOpacity>
-      {showPatientRequests && (
-        <View style={styles.section}>
-          {patientRequests.length > 0 ? (
-            <FlatList
-              data={patientRequests}
-              renderItem={renderPatientRequestItem}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-            />
-          ) : (
-            <Text style={styles.emptyText}>No hay solicitudes pendientes</Text>
-          )}
-        </View>
-      )} */}
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Mis Pacientes</Text>
+      <Text style={styles.sectionTitle}>Mis Pacientes</Text>
+      {loadingPatients ? (
+        <Text>Cargando pacientes...</Text>
+      ) : patients.length > 0 ? (
         <FlatList
           data={patients}
           renderItem={renderPatientItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item, index) => (item.id ? item.id.toString() : index.toString())}
           scrollEnabled={false}
         />
-      </View>
+      ) : (
+        <Text style={styles.emptyText}>No tienes pacientes asignados</Text>
+      )}
     </View>
   )
 
-  // Tab "prescriptions"
+  // Prescriptions Tab: pending and history
   const renderPrescriptionsTab = () => (
     <View style={styles.tabContent}>
-      {/* Pendientes */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Solicitudes de Recetas</Text>
-        {pendingRequests.length > 0 ? (
+        {loadingPrescriptions ? (
+          <Text>Cargando recetas...</Text>
+        ) : prescriptionRequests.filter(p => p.status === "pendiente").length > 0 ? (
           <FlatList
-            data={pendingRequests}
+            data={prescriptionRequests.filter(p => p.status === "pendiente")}
             renderItem={renderPrescriptionRequestItem}
             keyExtractor={(item) => item.id.toString()}
             scrollEnabled={false}
           />
         ) : (
-          <Text style={styles.emptyText}>No hay solicitudes</Text>
+          <Text style={styles.emptyText}>No hay solicitudes pendientes</Text>
         )}
       </View>
-
-      {/* Historial */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Historial de Recetas</Text>
-        {doneRequests.length > 0 ? (
+        {loadingPrescriptions ? (
+          <Text>Cargando recetas...</Text>
+        ) : prescriptionRequests.filter(p => p.status !== "pendiente").length > 0 ? (
           <FlatList
-            data={doneRequests}
+            data={prescriptionRequests.filter(p => p.status !== "pendiente")}
             renderItem={renderPrescriptionRequestItem}
             keyExtractor={(item) => item.id.toString()}
             scrollEnabled={false}
@@ -258,33 +251,16 @@ export default function DoctorDashboardScreen() {
     </View>
   )
 
-  // Tab "profile"
-  const doctorProfile = {
-    name: "Dr. Carlos Rodríguez",
-    specialty: "Cardiología",
-    experience: "15 años de experiencia",
-    contact: "carlos.rodriguez@hospital.com",
-  }
-
+  // Profile Tab: static doctor profile info
   const renderProfileTab = () => (
     <View style={styles.tabContent}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Perfil del Médico</Text>
-        <Text style={styles.profileText}>Nombre: {doctorProfile.name}</Text>
-        <Text style={styles.profileText}>Especialidad: {doctorProfile.specialty}</Text>
-        <Text style={styles.profileText}>Experiencia: {doctorProfile.experience}</Text>
-        <Text style={styles.profileText}>Contacto: {doctorProfile.contact}</Text>
-      </View>
+      <Text style={styles.sectionTitle}>Perfil del Médico</Text>
+      <Text style={styles.profileText}>Nombre: Dr. Carlos Rodríguez</Text>
+      <Text style={styles.profileText}>Especialidad: Cardiología</Text>
+      <Text style={styles.profileText}>Experiencia: 15 años de experiencia</Text>
+      <Text style={styles.profileText}>Contacto: carlos.rodriguez@hospital.com</Text>
     </View>
   )
-
-//   if (loading) {
-//     return (
-//       <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-//         <Text>Cargando prescripciones...</Text>
-//       </SafeAreaView>
-//     )
-//   }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -295,29 +271,34 @@ export default function DoctorDashboardScreen() {
             <Menu size={24} color="#333" />
           </TouchableOpacity>
         </View>
-
         <ScrollView style={styles.content}>
           {activeTab === "patients" && renderPatientsTab()}
           {activeTab === "prescriptions" && renderPrescriptionsTab()}
           {activeTab === "profile" && renderProfileTab()}
         </ScrollView>
-
         <View style={styles.tabBar}>
-          <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab("patients")}>
+          <TouchableOpacity
+            style={styles.tabButton}
+            onPress={() => setActiveTab("patients")}
+          >
             <User size={24} color={activeTab === "patients" ? "#4a6fa5" : "#666"} />
             <Text style={[styles.tabButtonText, activeTab === "patients" && styles.tabButtonTextActive]}>
               Pacientes
             </Text>
           </TouchableOpacity>
-
-          <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab("prescriptions")}>
+          <TouchableOpacity
+            style={styles.tabButton}
+            onPress={() => setActiveTab("prescriptions")}
+          >
             <FileText size={24} color={activeTab === "prescriptions" ? "#4a6fa5" : "#666"} />
             <Text style={[styles.tabButtonText, activeTab === "prescriptions" && styles.tabButtonTextActive]}>
               Recetas
             </Text>
           </TouchableOpacity>
-
-          <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab("profile")}>
+          <TouchableOpacity
+            style={styles.tabButton}
+            onPress={() => setActiveTab("profile")}
+          >
             <User size={24} color={activeTab === "profile" ? "#4a6fa5" : "#666"} />
             <Text style={[styles.tabButtonText, activeTab === "profile" && styles.tabButtonTextActive]}>
               Perfil
@@ -329,18 +310,10 @@ export default function DoctorDashboardScreen() {
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f8f9fa",
-  },
-  iconContainer: {
-    width: 50,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 15,
-  },
+const themeColor = "#4a6fa5"
 
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#f8f9fa" },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -349,76 +322,25 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     backgroundColor: "white",
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    borderBottomColor: "#e0e0e0"
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  menuButton: {
-    padding: 5,
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  tabContent: {
-    flex: 1,
-  },
-  sectionHeader: {
-    backgroundColor: "#e0e0e0",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-  },
-  section: {
-    marginBottom: 25,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 15,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: "#666",
-    fontStyle: "italic",
-    textAlign: "center",
-    padding: 20,
-  },
+  headerTitle: { fontSize: 18, fontWeight: "bold", color: "#333" },
+  menuButton: { padding: 5 },
+  content: { flex: 1, padding: 20 },
+  tabContent: { flex: 1 },
+  sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#333", marginBottom: 15 },
+  emptyText: { fontSize: 14, color: "#666", fontStyle: "italic", textAlign: "center", padding: 20 },
   requestCard: {
     flexDirection: "row",
     backgroundColor: "white",
     borderRadius: 10,
     padding: 15,
-    marginBottom: 10,
+    marginBottom: 10
   },
-  requestImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 15,
-  },
-  requestInfo: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  requestName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 4,
-  },
-  requestDetails: {
-    fontSize: 14,
-    color: "#666",
-  },
-  requestActions: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+  requestInfo: { flex: 1 },
+  requestName: { fontSize: 16, fontWeight: "bold", color: "#333", marginBottom: 4 },
+  requestDetails: { fontSize: 14, color: "#666" },
+  requestActions: { flexDirection: "row", alignItems: "center" },
   acceptButton: {
     backgroundColor: "#4CAF50",
     width: 36,
@@ -426,7 +348,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: 10,
+    marginLeft: 10
   },
   rejectButton: {
     backgroundColor: "#F44336",
@@ -435,86 +357,53 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: 10,
+    marginLeft: 10
   },
+  recetaCard: {
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2
+  },
+  downloadButton: {
+    backgroundColor: themeColor,
+    borderRadius: 10,
+    padding: 10,
+    alignItems: "center",
+    marginTop: 5
+  },
+  downloadButtonText: { color: "#fff", fontSize: 14, fontWeight: "600" },
   patientCard: {
     flexDirection: "row",
     backgroundColor: "white",
     borderRadius: 10,
     padding: 15,
     marginBottom: 10,
+    alignItems: "center"
   },
-  patientImage: {
+  iconContainer: {
     width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 15,
-  },
-  patientInfo: {
-    flex: 1,
+    alignItems: "center",
     justifyContent: "center",
+    marginRight: 15
   },
-  patientName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 2,
-  },
-  patientAge: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 2,
-  },
-  patientVisits: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  patientVisitLabel: {
-    fontSize: 12,
-    color: "#666",
-  },
-  patientVisitDate: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#4a6fa5",
-  },
-  patientActions: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  patientActionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: 5,
-    backgroundColor: "#f0f7ff",
-  },
-  tabBar: {
+  patientInfo: { flex: 1 },
+  patientName: { fontSize: 16, fontWeight: "bold", color: "#333", marginBottom: 2 },
+  patientAge: { fontSize: 14, color: "#666", marginBottom: 2 },
+  tabBar:{
     flexDirection: "row",
     backgroundColor: "white",
     borderTopWidth: 1,
     borderTopColor: "#e0e0e0",
-    paddingVertical: 10,
+    paddingVertical: 10
   },
-  tabButton: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  tabButtonText: {
-    fontSize: 12,
-    color: "#666",
-    marginTop: 4,
-  },
-  tabButtonTextActive: {
-    color: "#4a6fa5",
-    fontWeight: "600",
-  },
-  profileText: {
-    fontSize: 14,
-    color: "#333",
-    marginBottom: 10,
-  },
+  tabButton: { flex: 1, alignItems: "center", paddingVertical: 8 },
+  tabButtonText: { fontSize: 12, color: "#666", marginTop: 4 },
+  tabButtonTextActive: { color: "#4a6fa5", fontWeight: "600" },
+  profileText: { fontSize: 14, color: "#333", marginBottom: 10 }
 })

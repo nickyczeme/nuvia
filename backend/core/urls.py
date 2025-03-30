@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import RegistroUsuarioView, LoginUsuarioView, NotificationViewSet, DoctorListView, assign_doctor, get_anticonceptivos
 from . import views
 from .views import UpdatePacienteView
+from .views import get_doctor_patients
 
 router = DefaultRouter()
 router.register(r'notifications', NotificationViewSet, basename='notification')
@@ -16,5 +17,5 @@ urlpatterns = [
     path("doctores/", DoctorListView.as_view(), name="lista-doctores"),
     path("asignar-doctor/", assign_doctor, name="asignar-doctor"),
     path("anticonceptivos/", get_anticonceptivos, name="anticonceptivos"),
-
+    path('doctor/patients/', get_doctor_patients, name='doctor_patients'),
 ]

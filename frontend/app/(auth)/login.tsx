@@ -19,7 +19,7 @@ import axios from "axios"
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL ="http://192.168.1.49:8000"
+const API_URL = Constants.expoConfig?.extra?.apiUrl || "http://localhost:8000"
 
 export default function LoginScreen() {
   const [dni, setDni] = useState("")

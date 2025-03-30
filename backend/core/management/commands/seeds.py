@@ -89,10 +89,40 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS('✅ Datos de prueba creados con éxito'))
 
+        # Anticonceptivos: agregar varios
+        anticonceptivos_data = [
+            # Pastillas
+            {"tipo": "Pastillas", "marca": "Divina"},
+            {"tipo": "Pastillas", "marca": "Diane 35"},
+            {"tipo": "Pastillas", "marca": "Femexin"},
+            {"tipo": "Pastillas", "marca": "Ciclo 21"},
+            {"tipo": "Pastillas", "marca": "Jasmin"},
+            {"tipo": "Pastillas", "marca": "Yasmin"},
+            {"tipo": "Pastillas", "marca": "Bellaface"},
+            {"tipo": "Pastillas", "marca": "Isis Mini"},
+            {"tipo": "Pastillas", "marca": "Kala MD"},
+            {"tipo": "Pastillas", "marca": "Miranda"},
+
+            # Parche
+            {"tipo": "Parche", "marca": "Evra"},
+            {"tipo": "Parche", "marca": "Lisvy"},
+
+            # Anillo
+            {"tipo": "Anillo", "marca": "Nuvaring"},
+            {"tipo": "Anillo", "marca": "Blisovi"},
+            {"tipo": "Anillo", "marca": "Circlet"},
+            {"tipo": "Anillo", "marca": "Ellering"},
+        ]
+
+        for anti_data in anticonceptivos_data:
+            obj = Anticonceptivo.objects.create(**anti_data)
+            self.stdout.write(self.style.SUCCESS(f'Anticonceptivo creado: {obj}'))
+
+
 def calculate_last_box_end_date(fecha_inicio, cantidad_cajas):
     # Calcular días transcurridos desde el inicio
     days_elapsed = (timezone.now().date() - fecha_inicio).days
-    
+
     # Calcular días hasta que se termine la última caja
     days_per_box = 28  # Cada caja dura 28 días
     total_days = days_per_box * cantidad_cajas

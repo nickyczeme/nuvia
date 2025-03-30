@@ -33,34 +33,35 @@ export default function LoginScreen() {
         password,
       })
 
-      const { access, refresh, user } = response.data
+      const { access, refresh, usuario } = response.data;
 
       // Store the token
       await AsyncStorage.setItem('token', access);
       // Set default authorization header
       axios.defaults.headers.common['Authorization'] = `Bearer ${access}`;
 
-      console.log("Login exitoso:", user)
+      console.log("Login exitoso:", usuario);
 
-      if (user.tipo_usuario === "paciente") {
+      if (usuario.tipo_usuario === "paciente") {
         router.push({
           pathname: "/(patient)/dashboard",
           params: {
-            tipo: user.tipo_usuario,
-            nombre: user.nombre,
+            tipo: usuario.tipo_usuario,
+            nombre: usuario.nombre,
           },
-        })
-      } else if (user.tipo_usuario === "doctor") {
+        });
+      } else if (usuario.tipo_usuario === "doctor") {
         router.push({
           pathname: "/(doc)/dashboard",
           params: {
-            tipo: user.tipo_usuario,
-            nombre: user.nombre,
+            tipo: usuario.tipo_usuario,
+            nombre: usuario.nombre,
           },
-        })
+        });
       } else {
-        Alert.alert("Error", "Tipo de usuario desconocido.")
+        Alert.alert("Error", "Tipo de usuario desconocido.");
       }
+
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.error("Error de login:", error.response?.data || error.message)

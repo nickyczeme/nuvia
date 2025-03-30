@@ -11,7 +11,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import Constants from "expo-constants"
 
 // Cambia esta URL a la de tu servidor (o toma de extra.apiUrl si lo configuras)
-const API_URL = 'http://192.168.1.49:8000'
+const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:8000';
 
 type PrescriptionStatus = 'pendiente' | 'aceptado' | 'rechazado'
 
@@ -44,7 +44,7 @@ export default function DoctorDashboardScreen() {
         const token = await AsyncStorage.getItem('token')
         if (!token) {
           console.error("No token found")
-          
+
           return
         }
         // GET a /api/prescriptions/
@@ -58,7 +58,7 @@ export default function DoctorDashboardScreen() {
       } catch (error) {
         console.error("Error fetching prescriptions:", error)
       } finally {
-        
+
       }
     }
     fetchPrescriptions()
@@ -126,7 +126,7 @@ export default function DoctorDashboardScreen() {
 
   // Render de cada prescripción real
   const renderPrescriptionRequestItem = ({ item }: { item: PrescriptionRequest }) => (
-    
+
     <View style={styles.requestCard}>
       <View style={styles.requestInfo}>
         <Text style={styles.requestName}>
@@ -157,7 +157,7 @@ export default function DoctorDashboardScreen() {
       )}
     </View>
   )
-  
+
 
   // Render de cada paciente (mock)
   const renderPatientItem = ({ item }: { item: { id: string; name: string; age: number; lastVisit: string; nextVisit: string; image: string } }) => (
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 15,
   },
-  
+
   header: {
     flexDirection: "row",
     justifyContent: "space-between",

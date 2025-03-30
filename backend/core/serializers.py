@@ -5,6 +5,17 @@ from .models import Doctor, Paciente, Anticonceptivo, Usuario, SolicitudReceta, 
 
 Usuario = get_user_model()
 
+from rest_framework import serializers
+from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from .models import Doctor, Paciente, Anticonceptivo, Usuario
+
+Usuario = get_user_model()
+
+class DoctorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Doctor
+        fields = ['id', 'nombre', 'apellido', 'especialidad', 'domicilio_atencion']
 class UsuarioRegisterSerializer(serializers.ModelSerializer):
     tipo_usuario = serializers.ChoiceField(choices=[('doctor', 'Doctor'), ('paciente', 'Paciente')], write_only=True)
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
@@ -35,7 +46,7 @@ class UsuarioRegisterSerializer(serializers.ModelSerializer):
     fecha_de_inicio_periodo = serializers.DateField(required=False, allow_null=True)
     cantidad_de_cajas = serializers.IntegerField(required=False)
     anticonceptivo = serializers.PrimaryKeyRelatedField(queryset=Anticonceptivo.objects.all(), required=False, allow_null=True)
-    doctor_asignado = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), required=False, allow_null=True)
+    doctor_asignado = DoctorSerializer(read_only=True)  # <- importante para mostrar el doctor asignado
 
     class Meta:
         model = Usuario
@@ -58,33 +69,36 @@ class UsuarioRegisterSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         notification_token = validated_data.pop('notification_token', None)
 
-        shared_fields = {
-            'dni': validated_data.get('dni'),
-            'nombre': validated_data.get('nombre'),
-            'apellido': validated_data.get('apellido'),
-            'email': validated_data.get('email'),
-            'token_dispositivo': notification_token,
-        }
-
         if tipo_usuario == 'doctor':
-            user = Doctor(**shared_fields)
-            user.firma_digital = validated_data.get('firma_digital')
-            user.matricula = validated_data.get('matricula')
-            user.estado_matricula = validated_data.get('estado_matricula', 'vigente')
-            user.profesion = validated_data.get('profesion')
-            user.especialidad = validated_data.get('especialidad')
-            user.domicilio_atencion = validated_data.get('domicilio_atencion')
+            user = Doctor(
+                dni=validated_data.pop('dni'),
+                nombre=validated_data.pop('nombre'),
+                apellido=validated_data.pop('apellido'),
+                email=validated_data.pop('email'),
+                token_dispositivo=notification_token,
+                firma_digital=validated_data.pop('firma_digital', None),
+                matricula=validated_data.pop('matricula', None),
+                estado_matricula=validated_data.pop('estado_matricula', 'vigente'),
+                profesion=validated_data.pop('profesion', None),
+                especialidad=validated_data.pop('especialidad', None),
+                domicilio_atencion=validated_data.pop('domicilio_atencion', None),
+            )
 
         elif tipo_usuario == 'paciente':
-            user = Paciente(**shared_fields)
-            user.obra_social = validated_data.get('obra_social')
-            user.credencial = validated_data.get('credencial')
-            user.fecha_nacimiento = validated_data.get('fecha_nacimiento')
-            user.sexo = validated_data.get('sexo')
-            user.fecha_de_inicio_periodo = validated_data.get('fecha_de_inicio_periodo')
-            user.cantidad_de_cajas = validated_data.get('cantidad_de_cajas', 3)
-            user.anticonceptivo = validated_data.get('anticonceptivo')
-            user.doctor_asignado = validated_data.get('doctor_asignado')
+            user = Paciente(
+                dni=validated_data.pop('dni'),
+                nombre=validated_data.pop('nombre'),
+                apellido=validated_data.pop('apellido'),
+                email=validated_data.pop('email'),
+                token_dispositivo=notification_token,
+                obra_social=validated_data.pop('obra_social', None),
+                credencial=validated_data.pop('credencial', None),
+                fecha_nacimiento=validated_data.pop('fecha_nacimiento', None),
+                sexo=validated_data.pop('sexo', None),
+                fecha_de_inicio_periodo=validated_data.pop('fecha_de_inicio_periodo', None),
+                cantidad_de_cajas=validated_data.pop('cantidad_de_cajas', 3),
+                anticonceptivo=validated_data.pop('anticonceptivo', None),
+            )
 
         else:
             raise serializers.ValidationError({"tipo_usuario": "Tipo de usuario inválido."})
@@ -92,7 +106,6 @@ class UsuarioRegisterSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
-
 
 class UsuarioLoginSerializer(serializers.Serializer):
     dni = serializers.IntegerField()
@@ -105,3 +118,9 @@ class NotificationTokenSerializer(serializers.Serializer):
 class NotificationCreateSerializer(serializers.Serializer):
     mensaje = serializers.CharField()
     fecha_programada = serializers.DateTimeField(required=False)
+
+
+class DoctorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Doctor
+        fields = ['id', 'nombre', 'apellido', 'especialidad', 'domicilio_atencion']

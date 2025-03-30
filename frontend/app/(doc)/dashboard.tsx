@@ -162,7 +162,9 @@ export default function DoctorDashboardScreen() {
   // Render de cada paciente (mock)
   const renderPatientItem = ({ item }: { item: { id: string; name: string; age: number; lastVisit: string; nextVisit: string; image: string } }) => (
     <TouchableOpacity style={styles.patientCard}>
-      <Image source={{ uri: item.image }} style={styles.patientImage} />
+      <View style={styles.iconContainer}>
+        <User size={50} color="#4a6fa5" />
+      </View>
       <View style={styles.patientInfo}>
         <Text style={styles.patientName}>{item.name}</Text>
         <Text style={styles.patientAge}>{item.age} años</Text>
@@ -188,7 +190,7 @@ export default function DoctorDashboardScreen() {
   // Tab "patients"
   const renderPatientsTab = () => (
     <View style={styles.tabContent}>
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.sectionHeader}
         onPress={() => setShowPatientRequests(!showPatientRequests)}
       >
@@ -207,10 +209,10 @@ export default function DoctorDashboardScreen() {
             <Text style={styles.emptyText}>No hay solicitudes pendientes</Text>
           )}
         </View>
-      )}
+      )} */}
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Mis Pacientes (mock)</Text>
+        <Text style={styles.sectionTitle}>Mis Pacientes</Text>
         <FlatList
           data={patients}
           renderItem={renderPatientItem}
@@ -332,6 +334,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8f9fa",
   },
+  iconContainer: {
+    width: 50,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 15,
+  },
+  
   header: {
     flexDirection: "row",
     justifyContent: "space-between",

@@ -119,6 +119,27 @@ class NotificationCreateSerializer(serializers.Serializer):
     mensaje = serializers.CharField()
     fecha_programada = serializers.DateTimeField(required=False)
 
+class PacienteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Paciente
+        fields = ('id', 'nombre', 'apellido')
+
+class AnticonceptivoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anticonceptivo
+        fields = ('id', 'marca')
+
+
+class SolicitudRecetaSerializer(serializers.ModelSerializer):
+    paciente = PacienteSerializer(read_only=True)
+    anticonceptivo = AnticonceptivoSerializer(read_only=True)
+    class Meta:
+        model = SolicitudReceta
+        fields = '__all__'  # Adjust fields as necessary
+
+    def create(self, validated_data):
+        # Custom creation logic here if needed
+        return super().create(validated_data)
 
 class DoctorSerializer(serializers.ModelSerializer):
     class Meta:

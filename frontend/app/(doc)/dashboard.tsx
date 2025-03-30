@@ -1,112 +1,117 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, ScrollView } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
-import { GestureHandlerRootView } from 'react-native-gesture-handler'  // Import GestureHandlerRootView
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { User, FileText, MessageCircle, Calendar, Menu, Check, X } from "lucide-react-native"
+import axios from "axios"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import Constants from "expo-constants"
+
+// Cambia esta URL a la de tu servidor (o toma de extra.apiUrl si lo configuras)
+const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:8000';
+
+type PrescriptionStatus = 'pendiente' | 'aceptado' | 'rechazado'
+
+type PrescriptionRequest = {
+  id: number
+  status: PrescriptionStatus
+  fecha: string
+  paciente: {
+    nombre: string
+    apellido: string
+  }
+  anticonceptivo: {
+    marca: string
+  }
+  image?: string
+}
 
 export default function DoctorDashboardScreen() {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState("patients")
-  const [showPatientRequests, setShowPatientRequests] = useState(false)  // Estado para controlar la visibilidad
 
-  // Información del médico
-  const doctorProfile = {
-    name: "Dr. Carlos Rodríguez",
-    specialty: "Cardiología",
-    experience: "15 años de experiencia",
-    contact: "carlos.rodriguez@hospital.com",
+  const [activeTab, setActiveTab] = useState("patients")
+  const [showPatientRequests, setShowPatientRequests] = useState(false)
+  const [prescriptionRequests, setPrescriptionRequests] = useState<PrescriptionRequest[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Al montar el componente, cargamos las prescripciones
+  useEffect(() => {
+    const fetchPrescriptions = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token')
+        if (!token) {
+          console.error("No token found")
+
+          return
+        }
+        // GET a /api/prescriptions/
+        const response = await axios.get(`${API_URL}/api/prescriptions/`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+        console.log("Prescriptions response:", response.data)
+        setPrescriptionRequests(response.data)
+      } catch (error) {
+        console.error("Error fetching prescriptions:", error)
+      } finally {
+
+      }
+    }
+    fetchPrescriptions()
+  }, [])
+
+  // PATCH para actualizar estado de la receta
+  const updatePrescriptionStatus = async (id: number, status: PrescriptionStatus) => {
+    try {
+      const token = await AsyncStorage.getItem('token')
+      if (!token) {
+        console.error("No token for patch")
+        return
+      }
+      const res = await axios.patch(`${API_URL}/api/prescriptions/${id}/update/`, { status }, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      // Reemplazar en el state local
+      setPrescriptionRequests(prev =>
+        prev.map(p => p.id === id ? res.data : p)
+      )
+    } catch (err) {
+      console.error("Error updating prescription", err)
+    }
   }
 
-  // Mock data for patient requests
+  // Filtramos por pendientes vs no pendientes
+  const pendingRequests = prescriptionRequests.filter(p => p.status === 'pendiente')
+  const doneRequests = prescriptionRequests.filter(p => p.status !== 'pendiente')
+
+  const statusStyle = {
+    pendiente: { color: "#f0ad4e" },   // Amarillo anaranjado para pendiente
+    aceptado: { color: "#5cb85c" },     // Verde para aceptado
+    rechazado: { color: "#d9534f" }      // Rojo para rechazado
+  };
+
+  // EJEMPLO: supuestos "patientRequests" y "patients" (si querés mantenerlos mocks)
   const patientRequests = [
-    {
-      id: "1",
-      name: "María López",
-      age: 28,
-      date: "29/03/2025",
-      image: "/placeholder.svg?height=50&width=50",
-    },
-    {
-      id: "2",
-      name: "Laura Martínez",
-      age: 32,
-      date: "28/03/2025",
-      image: "/placeholder.svg?height=50&width=50",
-    },
-    {
-      id: "3",
-      name: "Carolina Sánchez",
-      age: 25,
-      date: "27/03/2025",
-      image: "/placeholder.svg?height=50&width=50",
-    },
+    { id: "1", name: "María López", age: 28, date: "29/03/2025", image: "/placeholder.svg?height=50&width=50" },
+    { id: "2", name: "Laura Martínez", age: 32, date: "28/03/2025", image: "/placeholder.svg?height=50&width=50" },
   ]
 
-  // Mock data for prescription requests
-  const prescriptionRequests = [
-    {
-      id: "1",
-      name: "Julia Rodríguez",
-      medication: "Yasmin",
-      date: "29/03/2025",
-      image: "/placeholder.svg?height=50&width=50",
-    },
-    {
-      id: "2",
-      name: "Ana Gómez",
-      medication: "Diane-35",
-      date: "28/03/2025",
-      image: "/placeholder.svg?height=50&width=50",
-    },
-  ]
-
-  // Mock data for patients
   const patients = [
-    {
-      id: "1",
-      name: "Julia Rodríguez",
-      age: 30,
-      lastVisit: "15/02/2025",
-      nextVisit: "15/04/2025",
-      image: "/placeholder.svg?height=50&width=50",
-    },
-    {
-      id: "2",
-      name: "Ana Gómez",
-      age: 27,
-      lastVisit: "10/03/2025",
-      nextVisit: "10/05/2025",
-      image: "/placeholder.svg?height=50&width=50",
-    },
-    {
-      id: "3",
-      name: "Sofía Pérez",
-      age: 35,
-      lastVisit: "05/03/2025",
-      nextVisit: "05/05/2025",
-      image: "/placeholder.svg?height=50&width=50",
-    },
-    {
-      id: "4",
-      name: "Elena Torres",
-      age: 29,
-      lastVisit: "20/02/2025",
-      nextVisit: "20/04/2025",
-      image: "/placeholder.svg?height=50&width=50",
-    },
+    { id: "1", name: "Julia Rodríguez", age: 30, lastVisit: "15/02/2025", nextVisit: "15/04/2025", image: "/placeholder.svg?height=50&width=50" },
+    { id: "2", name: "Ana Gómez", age: 27, lastVisit: "10/03/2025", nextVisit: "10/05/2025", image: "/placeholder.svg?height=50&width=50" },
   ]
 
+  // Render para las solicitudes “pacientes” (mock)
   const renderPatientRequestItem = ({ item }: { item: { image: string; name: string } }) => (
     <View style={styles.requestCard}>
       <Image source={{ uri: item.image }} style={styles.requestImage} />
       <View style={styles.requestInfo}>
         <Text style={styles.requestName}>{item.name}</Text>
-        <Text style={styles.requestDetails}>
-          Solicitud pendiente
-        </Text>
+        <Text style={styles.requestDetails}>Solicitud pendiente</Text>
       </View>
       <View style={styles.requestActions}>
         <TouchableOpacity style={styles.acceptButton}>
@@ -119,29 +124,47 @@ export default function DoctorDashboardScreen() {
     </View>
   )
 
-  const renderPrescriptionRequestItem = ({ item }: { item: { image: string; name: string; medication: string; date: string } }) => (
+  // Render de cada prescripción real
+  const renderPrescriptionRequestItem = ({ item }: { item: PrescriptionRequest }) => (
+
     <View style={styles.requestCard}>
-      <Image source={{ uri: item.image }} style={styles.requestImage} />
       <View style={styles.requestInfo}>
-        <Text style={styles.requestName}>{item.name}</Text>
+        <Text style={styles.requestName}>
+          {item.paciente.nombre} {item.paciente.apellido}
+        </Text>
         <Text style={styles.requestDetails}>
-          Medicamento: {item.medication} • {item.date}
+        Marca: {item.anticonceptivo?.marca || "N/A"} • Método: {item.anticonceptivo?.tipo || "N/A"} • {(new Date(item.fecha)).toLocaleDateString()}
+        </Text>
+        <Text style={[styles.requestDetails, statusStyle[item.status]]}>
+          {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
         </Text>
       </View>
-      <View style={styles.requestActions}>
-        <TouchableOpacity style={styles.acceptButton}>
-          <Check size={20} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.rejectButton}>
-          <X size={20} color="#fff" />
-        </TouchableOpacity>
-      </View>
+      {item.status === 'pendiente' && (
+        <View style={styles.requestActions}>
+          <TouchableOpacity
+            style={styles.acceptButton}
+            onPress={() => updatePrescriptionStatus(item.id, 'aceptado')}
+          >
+            <Check size={20} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.rejectButton}
+            onPress={() => updatePrescriptionStatus(item.id, 'rechazado')}
+          >
+            <X size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   )
 
+
+  // Render de cada paciente (mock)
   const renderPatientItem = ({ item }: { item: { id: string; name: string; age: number; lastVisit: string; nextVisit: string; image: string } }) => (
     <TouchableOpacity style={styles.patientCard}>
-      <Image source={{ uri: item.image }} style={styles.patientImage} />
+      <View style={styles.iconContainer}>
+        <User size={50} color="#4a6fa5" />
+      </View>
       <View style={styles.patientInfo}>
         <Text style={styles.patientName}>{item.name}</Text>
         <Text style={styles.patientAge}>{item.age} años</Text>
@@ -164,15 +187,16 @@ export default function DoctorDashboardScreen() {
     </TouchableOpacity>
   )
 
+  // Tab "patients"
   const renderPatientsTab = () => (
     <View style={styles.tabContent}>
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.sectionHeader}
-        onPress={() => setShowPatientRequests(!showPatientRequests)}  // Alternar visibilidad
+        onPress={() => setShowPatientRequests(!showPatientRequests)}
       >
-        <Text style={styles.sectionTitle}>Solicitudes de Pacientes</Text>
+        <Text style={styles.sectionTitle}>Solicitudes de Pacientes (mock)</Text>
       </TouchableOpacity>
-      {showPatientRequests && (  // Mostrar lista solo si showPatientRequests es true
+      {showPatientRequests && (
         <View style={styles.section}>
           {patientRequests.length > 0 ? (
             <FlatList
@@ -185,7 +209,7 @@ export default function DoctorDashboardScreen() {
             <Text style={styles.emptyText}>No hay solicitudes pendientes</Text>
           )}
         </View>
-      )}
+      )} */}
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Mis Pacientes</Text>
@@ -199,28 +223,48 @@ export default function DoctorDashboardScreen() {
     </View>
   )
 
+  // Tab "prescriptions"
   const renderPrescriptionsTab = () => (
     <View style={styles.tabContent}>
+      {/* Pendientes */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Solicitudes de Recetas</Text>
-        {prescriptionRequests.length > 0 ? (
+        {pendingRequests.length > 0 ? (
           <FlatList
-            data={prescriptionRequests}
+            data={pendingRequests}
             renderItem={renderPrescriptionRequestItem}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item.id.toString()}
             scrollEnabled={false}
           />
         ) : (
-          <Text style={styles.emptyText}>No hay solicitudes de recetas pendientes</Text>
+          <Text style={styles.emptyText}>No hay solicitudes</Text>
         )}
       </View>
 
+      {/* Historial */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Historial de Recetas</Text>
-        <Text style={styles.emptyText}>No hay recetas recientes</Text>
+        {doneRequests.length > 0 ? (
+          <FlatList
+            data={doneRequests}
+            renderItem={renderPrescriptionRequestItem}
+            keyExtractor={(item) => item.id.toString()}
+            scrollEnabled={false}
+          />
+        ) : (
+          <Text style={styles.emptyText}>No hay recetas recientes</Text>
+        )}
       </View>
     </View>
   )
+
+  // Tab "profile"
+  const doctorProfile = {
+    name: "Dr. Carlos Rodríguez",
+    specialty: "Cardiología",
+    experience: "15 años de experiencia",
+    contact: "carlos.rodriguez@hospital.com",
+  }
 
   const renderProfileTab = () => (
     <View style={styles.tabContent}>
@@ -234,57 +278,53 @@ export default function DoctorDashboardScreen() {
     </View>
   )
 
+//   if (loading) {
+//     return (
+//       <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+//         <Text>Cargando prescripciones...</Text>
+//       </SafeAreaView>
+//     )
+//   }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-        <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-            <Text style={styles.headerTitle}>Dr. Carlos Rodríguez</Text>
-            <TouchableOpacity style={styles.menuButton}>
+          <Text style={styles.headerTitle}>Dr. Carlos Rodríguez</Text>
+          <TouchableOpacity style={styles.menuButton}>
             <Menu size={24} color="#333" />
-            </TouchableOpacity>
+          </TouchableOpacity>
         </View>
 
-        {/* Eliminar o comentar la barra de pestañas */}
-        {/* <View style={styles.tabsContainer}>
-            <TouchableOpacity
-            style={[styles.tab, activeTab === "patients" && styles.activeTab]}
-            onPress={() => setActiveTab("patients")}
-            >
-            <Text style={[styles.tabText, activeTab === "patients" && styles.activeTabText]}>Pacientes</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-            style={[styles.tab, activeTab === "prescriptions" && styles.activeTab]}
-            onPress={() => setActiveTab("prescriptions")}
-            >
-            <Text style={[styles.tabText, activeTab === "prescriptions" && styles.activeTabText]}>Recetas</Text>
-            </TouchableOpacity>
-        </View> */}
-
         <ScrollView style={styles.content}>
-            {activeTab === "patients" && renderPatientsTab()}
-            {activeTab === "prescriptions" && renderPrescriptionsTab()}
-            {activeTab === "profile" && renderProfileTab()}
+          {activeTab === "patients" && renderPatientsTab()}
+          {activeTab === "prescriptions" && renderPrescriptionsTab()}
+          {activeTab === "profile" && renderProfileTab()}
         </ScrollView>
 
         <View style={styles.tabBar}>
-            <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab("patients")}>
+          <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab("patients")}>
             <User size={24} color={activeTab === "patients" ? "#4a6fa5" : "#666"} />
-            <Text style={[styles.tabButtonText, activeTab === "patients" && styles.tabButtonTextActive]}>Pacientes</Text>
-            </TouchableOpacity>
+            <Text style={[styles.tabButtonText, activeTab === "patients" && styles.tabButtonTextActive]}>
+              Pacientes
+            </Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab("prescriptions")}>
+          <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab("prescriptions")}>
             <FileText size={24} color={activeTab === "prescriptions" ? "#4a6fa5" : "#666"} />
             <Text style={[styles.tabButtonText, activeTab === "prescriptions" && styles.tabButtonTextActive]}>
-                Recetas
+              Recetas
             </Text>
-            </TouchableOpacity>
+          </TouchableOpacity>
 
-            <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab("profile")}>
+          <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab("profile")}>
             <User size={24} color={activeTab === "profile" ? "#4a6fa5" : "#666"} />
-            <Text style={[styles.tabButtonText, activeTab === "profile" && styles.tabButtonTextActive]}>Perfil</Text>
-            </TouchableOpacity>
+            <Text style={[styles.tabButtonText, activeTab === "profile" && styles.tabButtonTextActive]}>
+              Perfil
+            </Text>
+          </TouchableOpacity>
         </View>
-        </SafeAreaView>
+      </SafeAreaView>
     </GestureHandlerRootView>
   )
 }
@@ -294,6 +334,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8f9fa",
   },
+  iconContainer: {
+    width: 50,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 15,
+  },
+
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -312,36 +359,18 @@ const styles = StyleSheet.create({
   menuButton: {
     padding: 5,
   },
-  tabsContainer: {
-    flexDirection: "row",
-    backgroundColor: "white",
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-  },
-  tab: {
-    paddingVertical: 15,
-    marginRight: 20,
-    borderBottomWidth: 2,
-    borderBottomColor: "transparent",
-  },
-  activeTab: {
-    borderBottomColor: "#4a6fa5",
-  },
-  tabText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#666",
-  },
-  activeTabText: {
-    color: "#4a6fa5",
-  },
   content: {
     flex: 1,
     padding: 20,
   },
   tabContent: {
     flex: 1,
+  },
+  sectionHeader: {
+    backgroundColor: "#e0e0e0",
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
   },
   section: {
     marginBottom: 25,
@@ -352,17 +381,19 @@ const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 15,
   },
+  emptyText: {
+    fontSize: 14,
+    color: "#666",
+    fontStyle: "italic",
+    textAlign: "center",
+    padding: 20,
+  },
   requestCard: {
     flexDirection: "row",
     backgroundColor: "white",
     borderRadius: 10,
     padding: 15,
     marginBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
   },
   requestImage: {
     width: 50,
@@ -412,11 +443,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 15,
     marginBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
   },
   patientImage: {
     width: 50,
@@ -465,13 +491,6 @@ const styles = StyleSheet.create({
     marginLeft: 5,
     backgroundColor: "#f0f7ff",
   },
-  emptyText: {
-    fontSize: 14,
-    color: "#666",
-    fontStyle: "italic",
-    textAlign: "center",
-    padding: 20,
-  },
   tabBar: {
     flexDirection: "row",
     backgroundColor: "white",
@@ -492,12 +511,6 @@ const styles = StyleSheet.create({
   tabButtonTextActive: {
     color: "#4a6fa5",
     fontWeight: "600",
-  },
-  sectionHeader: {
-    backgroundColor: "#e0e0e0",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
   },
   profileText: {
     fontSize: 14,

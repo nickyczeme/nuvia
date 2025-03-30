@@ -27,12 +27,6 @@ class Command(BaseCommand):
         )
         self.stdout.write(self.style.SUCCESS(f'Doctor creado: {doc}'))
 
-        # Crear Anticonceptivo
-        anti = Anticonceptivo.objects.create(
-            tipo='Píldora',
-            marca='MarcaX'
-        )
-        self.stdout.write(self.style.SUCCESS(f'Anticonceptivo creado: {anti}'))
 
         # Fecha de inicio: hace 81 días (para que falten 3 días para terminar las cajas)
         fecha_inicio = date.today() - timedelta(days=81)
@@ -130,7 +124,8 @@ def calculate_last_box_end_date(fecha_inicio, cantidad_cajas):
 
     # Si faltan 3 días o menos, enviar notificación
     if days_remaining <= NotificationService.DIAS_ANTES_NOTIFICACION:
-        # Enviar notificación al paciente y al doctor
+        return True
+    return False
 
 def run_notifications():
     while True:

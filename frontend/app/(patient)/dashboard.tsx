@@ -114,6 +114,46 @@ export default function PatientDashboardScreen() {
     )
   }
 
+  const pedirRecetaUnica = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token")
+      if (!token) {
+        console.error("No token found")
+        return
+      }
+  
+      const response = await axios.post(`${API_URL}/api/prescriptions/pedir-unica/`, {}, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+  
+      console.log("Receta única generada:", response.data)
+      alert("Tu solicitud fue enviada al médico")
+    } catch (error) {
+      console.error("Error al pedir receta única:", error)
+      alert("Hubo un error al crear la receta")
+    }
+  }
+
+  const activarRecetaAutomatica = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token')
+      const res = await axios.post(`${API_URL}/api/prescriptions/activar-automatica/`, {}, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+  
+      console.log("Receta automática activada:", res.data)
+      setAutoRecipeActive(true)
+    } catch (err) {
+      console.error("Error activando receta automática", err)
+    }
+  }
+  
+  
+
   const renderHomeTab = () => (
     <ScrollView style={styles.tabContent}>
       {/* SECCIÓN: MI MÉDICO */}
@@ -239,13 +279,9 @@ export default function PatientDashboardScreen() {
           <View style={styles.recipeButtonsContainer}>
             <TouchableOpacity
               style={styles.singleRecipeButton}
-              onPress={() => {
-                console.log("Pedir receta única")
-              }}
+              onPress={pedirRecetaUnica}
             >
-              <Text style={styles.singleRecipeButtonText}>
-                Pedir receta única
-              </Text>
+              <Text style={styles.singleRecipeButtonText}>Pedir receta única</Text>
               <Text style={styles.recipeDescription}>
                 Se enviará una receta de forma inmediata.
               </Text>
@@ -256,7 +292,8 @@ export default function PatientDashboardScreen() {
                 styles.recurringRecipeButton,
                 autoRecipeActive && styles.recurringRecipeActiveButton
               ]}
-              onPress={() => setAutoRecipeActive((prev) => !prev)}
+              onPress={activarRecetaAutomatica} // 👈 cambio importante
+              disabled={autoRecipeActive} // 👈 lo deshabilita si ya está activado
             >
               <Text
                 style={[
@@ -265,15 +302,17 @@ export default function PatientDashboardScreen() {
                 ]}
               >
                 {autoRecipeActive
-                  ? "Cancelar programación"
+                  ? "Receta automática activada"
                   : "Programar receta trimestral"}
               </Text>
+
               {!autoRecipeActive && (
                 <Text style={styles.recipeDescription}>
                   Recibirás recetas automáticamente cada 3 meses.
                 </Text>
               )}
             </TouchableOpacity>
+
           </View>
         </View>
       </View>
@@ -393,7 +432,7 @@ export default function PatientDashboardScreen() {
           const data = response.data
           setAllAnticonceptivos(data)
           const tiposUnicos = Array.from(new Set(data.map((a: any) => a.tipo)))
-          setTipoOptions(tiposUnicos)
+          setTipoOptions(tiposUnicos as string[])
         } catch (error) {
           console.error("Error al obtener anticonceptivos:", error)
         }

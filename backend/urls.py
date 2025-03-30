@@ -24,6 +24,7 @@ from drf_yasg import openapi
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/prescriptions/', include('prescriptions.urls')),  # 👈 esto habilita correctamente
     path('api/usuarios/', include('core.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

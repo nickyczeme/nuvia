@@ -9,83 +9,15 @@ class Command(BaseCommand):
     help = 'Crea datos de prueba para desarrollo'
 
     def handle(self, *args, **kwargs):
-        # Clear existing test data (optional)
+        # Borrar datos previos
         SolicitudReceta.objects.all().delete()
         SolicitudAmistad.objects.all().delete()
         Paciente.objects.all().delete()
         Doctor.objects.all().delete()
         Anticonceptivo.objects.all().delete()
 
-        # Crear Doctor
-        doc = Doctor.objects.create_user(
-            dni=10000001,
-            password='doctor123',
-            nombre='Gabriela',
-            apellido='Sosa',
-            email='gsosa@example.com',
-            token_dispositivo="ExponentPushToken[wBIrwfAWjkEewCYovjnIl7]"
-        )
-        self.stdout.write(self.style.SUCCESS(f'Doctor creado: {doc}'))
-
-
-        # Fecha de inicio: hace 81 días (para que falten 3 días para terminar las cajas)
-        fecha_inicio = date.today() - timedelta(days=81)
-
-        # Crear Paciente 1 (con notificación próxima)
-        pac1 = Paciente.objects.create_user(
-            dni=20000002,
-            password='paciente123',
-            nombre='Julieta',
-            apellido='González',
-            email='jgonzalez@example.com',
-            doctor_asignado=doc,
-            anticonceptivo=anti,
-            credencial='XYZ987654',
-            cantidad_de_cajas=3,  # 3 cajas de 28 días = 84 días total
-            fecha_de_inicio_periodo=fecha_inicio,  # Faltan 3 días para terminar
-            token_dispositivo="ExponentPushToken[OPQLZoE-DMhYRKrLHAbjp9]"
-        )
-        self.stdout.write(self.style.SUCCESS(f'Paciente 1 creado: {pac1}'))
-
-        # Crear Paciente 2 (con fecha de inicio reciente)
-        pac2 = Paciente.objects.create_user(
-            dni=20000003,
-            password='paciente123',
-            nombre='Lucía',
-            apellido='Martínez',
-            email='lmartinez@example.com',
-            doctor_asignado=doc,
-            anticonceptivo=anti,
-            credencial='ABC123456',
-            cantidad_de_cajas=3,
-            fecha_de_inicio_periodo=date.today() - timedelta(days=10),  # Inicio hace 10 días
-            token_dispositivo="ExponentPushToken[diferente-token]"
-        )
-        self.stdout.write(self.style.SUCCESS(f'Paciente 2 creado: {pac2}'))
-
-        # Crear SolicitudReceta para ambos pacientes
-        for pac in [pac1, pac2]:
-            receta = SolicitudReceta.objects.create(
-                paciente=pac,
-                doctor=doc,
-                anticonceptivo=anti,
-                status='pendiente'
-            )
-            self.stdout.write(self.style.SUCCESS(f'SolicitudReceta creada: {receta}'))
-
-            # Crear SolicitudAmistad
-            amistad = SolicitudAmistad.objects.create(
-                paciente=pac,
-                doctor=doc,
-                estado='aceptado'  # Cambiado a aceptado para que funcionen las notificaciones
-            )
-            self.stdout.write(self.style.SUCCESS(f'SolicitudAmistad creada: {amistad}'))
-
-        self.stdout.write(self.style.SUCCESS('✅ Datos de prueba creados con éxito'))
-
-        # Anticonceptivos: agregar varios
+        # Crear anticonceptivos
         anticonceptivos_data = [
-            # Pastillas
             {"tipo": "Pastillas", "marca": "Divina"},
             {"tipo": "Pastillas", "marca": "Diane 35"},
             {"tipo": "Pastillas", "marca": "Femexin"},
@@ -96,23 +28,80 @@ class Command(BaseCommand):
             {"tipo": "Pastillas", "marca": "Isis Mini"},
             {"tipo": "Pastillas", "marca": "Kala MD"},
             {"tipo": "Pastillas", "marca": "Miranda"},
-
-            # Parche
             {"tipo": "Parche", "marca": "Evra"},
             {"tipo": "Parche", "marca": "Lisvy"},
-
-            # Anillo
             {"tipo": "Anillo", "marca": "Nuvaring"},
             {"tipo": "Anillo", "marca": "Blisovi"},
             {"tipo": "Anillo", "marca": "Circlet"},
             {"tipo": "Anillo", "marca": "Ellering"},
         ]
+        anticonceptivos = [Anticonceptivo.objects.create(**data) for data in anticonceptivos_data]
 
-        for anti_data in anticonceptivos_data:
-            obj = Anticonceptivo.objects.create(**anti_data)
-            self.stdout.write(self.style.SUCCESS(f'Anticonceptivo creado: {obj}'))
+        # Datos realistas
+        doctor_data = [
+            {"nombre": "Gabriela", "apellido": "Sosa"},
+            {"nombre": "Juan", "apellido": "Pérez"},
+            {"nombre": "Martina", "apellido": "López"},
+        ]
+        paciente_data = [
+            {"nombre": "Julieta", "apellido": "González"},
+            {"nombre": "Lucía", "apellido": "Martínez"},
+            {"nombre": "Camila", "apellido": "Fernández"},
+            {"nombre": "Sofía", "apellido": "Torres"},
+            {"nombre": "Valentina", "apellido": "Ramírez"},
+            {"nombre": "Martina", "apellido": "Sánchez"},
+            {"nombre": "Agustina", "apellido": "Díaz"},
+            {"nombre": "Paula", "apellido": "Morales"},
+            {"nombre": "Carla", "apellido": "Gómez"},
+            {"nombre": "Florencia", "apellido": "Ruiz"},
+        ]
 
+        # Crear doctores
+        doctores = []
+        for i, doc in enumerate(doctor_data):
+            doctor = Doctor.objects.create_user(
+                dni=10000000 + i,
+                password='doctor123',
+                nombre=doc["nombre"],
+                apellido=doc["apellido"],
+                email=f'{doc["nombre"].lower()}.{doc["apellido"].lower()}@example.com',
+                token_dispositivo=f"ExponentPushToken[token-doctor{i}]"
+            )
+            doctores.append(doctor)
 
+        # Crear pacientes
+        for i, pac in enumerate(paciente_data):
+            doctor = doctores[i % len(doctores)]
+            anticonceptivo = anticonceptivos[i % len(anticonceptivos)]
+            paciente = Paciente.objects.create_user(
+                dni=20000000 + i,
+                password='paciente123',
+                nombre=pac["nombre"],
+                apellido=pac["apellido"],
+                email=f'{pac["nombre"].lower()}.{pac["apellido"].lower()}@example.com',
+                doctor_asignado=doctor,
+                anticonceptivo=anticonceptivo,
+                credencial=f'CRED{i:06}',
+                cantidad_de_cajas=(i % 3) + 1,
+                fecha_de_inicio_periodo=date.today() - timedelta(days=(i * 7)),
+                token_dispositivo=f"ExponentPushToken[token-paciente{i}]"
+            )
+
+            SolicitudReceta.objects.create(
+                paciente=paciente,
+                doctor=doctor,
+                anticonceptivo=anticonceptivo,
+                status='pendiente'
+            )
+
+            SolicitudAmistad.objects.create(
+                paciente=paciente,
+                doctor=doctor,
+                anticonceptivo=anticonceptivo,
+                estado='aceptado'
+            )
+
+        self.stdout.write(self.style.SUCCESS("✅ Datos realistas de prueba creados con éxito."))
 def calculate_last_box_end_date(fecha_inicio, cantidad_cajas):
     # Calcular días transcurridos desde el inicio
     days_elapsed = (timezone.now().date() - fecha_inicio).days

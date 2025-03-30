@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'core',
     'drf_yasg',
+    'prescriptions',
 ]
 
 MIDDLEWARE = [
@@ -137,6 +138,9 @@ REST_FRAMEWORK = {
     ],
 }
 
+SIMPLE_JWT = {
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
 
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = True  # For development only

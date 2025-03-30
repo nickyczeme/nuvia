@@ -10,12 +10,12 @@ import {
   Modal,
   Alert,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Linking
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import {
-  MessageCircle,
   User,
   Pill,
   Calendar as CalendarIcon,
@@ -28,6 +28,8 @@ import axios from "axios"
 import Constants from "expo-constants"
 import DropDownPicker from "react-native-dropdown-picker"
 import Calendar from "@/app/(calendar)/calendar"
+import { LogOut } from "lucide-react-native"
+
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl || "http://localhost:8000"
 
@@ -57,7 +59,9 @@ export default function PatientDashboardScreen() {
         if (data.fecha_de_inicio_periodo) {
           const start = new Date(data.fecha_de_inicio_periodo)
           const today = new Date()
-          const diffDays = Math.floor((today.getTime() - start.getTime()) / (1000 * 3600 * 24))
+          const diffDays = Math.floor(
+            (today.getTime() - start.getTime()) / (1000 * 3600 * 24)
+          )
           const currentDay = (diffDays % 28) + 1
 
           let label = ""
@@ -67,7 +71,9 @@ export default function PatientDashboardScreen() {
           else label = "Fase lútea"
 
           const daysUntilNext = 28 - currentDay
-          const nextPeriodDate = new Date(today.getTime() + daysUntilNext * 24 * 60 * 60 * 1000)
+          const nextPeriodDate = new Date(
+            today.getTime() + daysUntilNext * 24 * 60 * 60 * 1000
+          )
           const nextPeriod = nextPeriodDate.toISOString().slice(0, 10)
 
           setCycleInfo({ currentDay, label, nextPeriod, daysUntilNext })
@@ -80,6 +86,23 @@ export default function PatientDashboardScreen() {
     }
     fetchUserData()
   }, [])
+
+  // Función para descargar archivo
+  const handleDownload = (url: string) => {
+    Linking.openURL(url).catch(err =>
+      console.error("Error al descargar archivo:", err)
+    )
+  }
+
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem("token")
+      router.replace("/login")
+    } catch (error) {
+      console.error("Error al hacer logout:", error)
+    }
+  }
+
 
   if (loading) {
     return (
@@ -121,7 +144,9 @@ export default function PatientDashboardScreen() {
             </View>
           </View>
         ) : (
-          <Text style={{ color: "#666" }}>No tienes un médico asignado aún.</Text>
+          <Text style={{ color: "#666" }}>
+            No tienes un médico asignado aún.
+          </Text>
         )}
       </View>
 
@@ -255,10 +280,37 @@ export default function PatientDashboardScreen() {
     </ScrollView>
   )
 
+  // En lugar de "Mi Perfil" ahora se muestra "Mis Recetas"
   const renderProfileTab = () => (
     <View style={styles.tabContent}>
-      <Text style={styles.tabTitle}>Mi Perfil</Text>
-      {/* Aquí iría el contenido del perfil */}
+      <Text style={styles.tabTitle}>Mis Recetas</Text>
+      {userData.solicitudes_recetas && userData.solicitudes_recetas.length > 0 ? (
+        <ScrollView style={styles.recetasList}>
+          {userData.solicitudes_recetas.map((receta: any) => (
+            <View key={receta.id} style={styles.recetaCard}>
+              <Text style={styles.recetaDoctor}>
+                Doctor:{" "}
+                {receta.doctor
+                  ? `${receta.doctor.nombre} ${receta.doctor.apellido}`
+                  : "N/A"}
+              </Text>
+              <Text style={styles.recetaStatus}>Estado: {receta.status}</Text>
+              {receta.archivo ? (
+                <TouchableOpacity
+                  style={styles.downloadButton}
+                  onPress={() => handleDownload(receta.archivo)}
+                >
+                  <Text style={styles.downloadButtonText}>Descargar archivo</Text>
+                </TouchableOpacity>
+              ) : (
+                <Text style={styles.recetaNoFile}>Sin archivo adjunto</Text>
+              )}
+            </View>
+          ))}
+        </ScrollView>
+      ) : (
+        <Text style={styles.noRecetasText}>No tienes recetas solicitadas.</Text>
+      )}
     </View>
   )
 
@@ -469,8 +521,8 @@ export default function PatientDashboardScreen() {
           <Text style={styles.greeting}>
             Hola, {userData.nombre || ""} {userData.apellido || ""}
           </Text>
-          <TouchableOpacity style={styles.menuButton}>
-            <Menu size={24} color="#333" />
+          <TouchableOpacity style={styles.menuButton} onPress={handleLogout}>
+            <LogOut size={24} color="#333" />
           </TouchableOpacity>
         </View>
 
@@ -507,7 +559,7 @@ export default function PatientDashboardScreen() {
           >
             <User size={24} color={activeTab === "profile" ? "#4a6fa5" : "#666"} />
             <Text style={[styles.tabButtonText, activeTab === "profile" && styles.tabButtonTextActive]}>
-              Perfil
+              Mis Recetas
             </Text>
           </TouchableOpacity>
         </View>
@@ -661,6 +713,30 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: "center"
   },
+  recetasList: { flex: 1 },
+  recetaCard: {
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2
+  },
+  recetaDoctor: { fontSize: 16, fontWeight: "bold", color: "#333", marginBottom: 5 },
+  recetaStatus: { fontSize: 14, color: "#4a6fa5", marginBottom: 5 },
+  downloadButton: {
+    backgroundColor: themeColor,
+    borderRadius: 10,
+    padding: 10,
+    alignItems: "center",
+    marginTop: 5
+  },
+  downloadButtonText: { color: "#fff", fontSize: 14, fontWeight: "600" },
+  recetaNoFile: { fontSize: 12, color: "#666", fontStyle: "italic" },
+  noRecetasText: { fontSize: 16, color: "#666", textAlign: "center", marginTop: 20 },
   tabBar: {
     flexDirection: "row",
     backgroundColor: "white",

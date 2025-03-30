@@ -1,11 +1,9 @@
 "use client"
 
-import { useState } from "react"
-import Link from "next/link"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { GestureHandlerRootView } from 'react-native-gesture-handler'  // Import GestureHandlerRootView
+import React, { useState } from "react"
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native"
+import { ChevronLeft, ChevronRight } from "lucide-react-native"
+import { GestureHandlerRootView } from "react-native-gesture-handler"
 
 export default function CalendarPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
@@ -46,42 +44,40 @@ export default function CalendarPage() {
   const renderCalendar = () => {
     const year = currentMonth.getFullYear()
     const month = currentMonth.getMonth()
-
     const daysInMonth = getDaysInMonth(year, month)
     const firstDayOfMonth = getFirstDayOfMonth(year, month)
-
     const days = []
 
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push(<div key={`empty-${i}`} className="h-10 w-10"></div>)
+      days.push(<View key={`empty-${i}`} style={styles.emptyCell} />)
     }
 
-    // Sample period data (for demonstration)
+    // Sample patient data for styling
     const periodDays = [5, 6, 7, 8, 9]
     const fertileDays = [14, 15, 16, 17, 18]
     const ovulationDay = 16
 
-    // Add cells for each day of the month
+    // Create cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
-      let bgColor = ""
-      let textColor = ""
+      let cellStyle = [styles.dayCell, styles.defaultDay]
+      let textStyle = styles.dayText
 
       if (periodDays.includes(day)) {
-        bgColor = "bg-red-100"
-        textColor = "text-red-600"
+        cellStyle.push(styles.periodDay)
+        textStyle = { ...textStyle, ...styles.periodDayText }
       } else if (day === ovulationDay) {
-        bgColor = "bg-blue-100"
-        textColor = "text-blue-600"
+        cellStyle.push(styles.ovulationDay)
+        textStyle = { ...textStyle, ...styles.ovulationDayText }
       } else if (fertileDays.includes(day)) {
-        bgColor = "bg-blue-50"
-        textColor = "text-blue-500"
+        cellStyle.push(styles.fertileDay)
+        textStyle = { ...textStyle, ...styles.fertileDayText }
       }
 
       days.push(
-        <div key={day} className={`h-10 w-10 rounded-full flex items-center justify-center ${bgColor} ${textColor}`}>
-          {day}
-        </div>,
+        <View key={day} style={cellStyle}>
+          <Text style={textStyle}>{day}</Text>
+        </View>
       )
     }
 
@@ -89,62 +85,97 @@ export default function CalendarPage() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>  {/* Wrap everything inside GestureHandlerRootView */}
-      <div className="container max-w-md mx-auto px-4 py-8">
-        <header className="mb-6">
-          <div className="flex items-center mb-4">
-            <Link href="/">
-              <Button variant="ghost" size="sm" onPress={() => {}}>
-                <div className="flex items-center gap-2">
-                  <ChevronLeft className="h-5 w-5" />
-                  <span>Back</span>
-                </div>
-              </Button>
-            </Link>
-            <h1 className="text-xl font-bold text-center flex-1">Calendar</h1>
-          </div>
-        </header>
-        <Card>
-          <CardContent>
-            <div className="flex justify-between items-center mb-4">
-              <Button onPress={prevMonth} variant="ghost" size="sm">
-                  <ChevronLeft className="h-5 w-5" />
-              </Button>
-              <h2 className="text-lg font-medium">
-                {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-              </h2>
-              <Button variant="ghost" size="sm" onPress={nextMonth}>
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-            </div>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <View style={styles.container}>
+        {/* Header with month navigation */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={prevMonth} style={styles.navButton}>
+            <ChevronLeft size={24} color="#4a6fa5" />
+          </TouchableOpacity>
+          <Text style={styles.monthTitle}>
+            {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+          </Text>
+          <TouchableOpacity onPress={nextMonth} style={styles.navButton}>
+            <ChevronRight size={24} color="#4a6fa5" />
+          </TouchableOpacity>
+        </View>
 
-            <div className="grid grid-cols-7 gap-1 text-center mb-2">
-              {daysOfWeek.map((day) => (
-                <div key={day} className="text-xs font-medium text-muted-foreground">
-                  {day}
-                </div>
-              ))}
-            </div>
+        {/* Weekday labels */}
+        <View style={styles.weekDaysRow}>
+          {daysOfWeek.map((day) => (
+            <Text key={day} style={styles.weekDayText}>{day}</Text>
+          ))}
+        </View>
 
-            <div className="grid grid-cols-7 gap-1 text-center">{renderCalendar()}</div>
-          </CardContent>
-        </Card>
+        {/* Calendar grid */}
+        <View style={styles.calendarGrid}>{renderCalendar()}</View>
 
-        <div className="mt-6 space-y-2">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-red-100"></div>
-            <span className="text-sm">Period</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-blue-100"></div>
-            <span className="text-sm">Ovulation</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-blue-50"></div>
-            <span className="text-sm">Fertile Window</span>
-          </div>
-        </div>
-      </div>
+        {/* Legend */}
+        <View style={styles.legend}>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendColor, styles.periodDay]} />
+            <Text style={styles.legendText}>Menstruación</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendColor, styles.ovulationDay]} />
+            <Text style={styles.legendText}>Ovulación</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendColor, styles.fertileDay]} />
+            <Text style={styles.legendText}>Ventana Fértil</Text>
+          </View>
+        </View>
+      </View>
     </GestureHandlerRootView>
   )
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 16, backgroundColor: "#fff" },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  navButton: { padding: 8 },
+  monthTitle: { fontSize: 20, fontWeight: "bold", color: "#4a6fa5" },
+  weekDaysRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 8,
+  },
+  weekDayText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#666",
+    width: 40,
+    textAlign: "center",
+  },
+  calendarGrid: { flexDirection: "row", flexWrap: "wrap" },
+  emptyCell: { width: 40, height: 40, margin: 4 },
+  dayCell: {
+    width: 40,
+    height: 40,
+    margin: 4,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  defaultDay: { borderWidth: 1, borderColor: "#ccc" },
+  dayText: { fontSize: 14, color: "#333" },
+  periodDay: { backgroundColor: "#ffcccc", borderColor: "#ff9999" },
+  periodDayText: { color: "#a80000", fontWeight: "bold" },
+  ovulationDay: { backgroundColor: "#cce5ff", borderColor: "#99ccff" },
+  ovulationDayText: { color: "#0056b3", fontWeight: "bold" },
+  fertileDay: { backgroundColor: "#e6f7ff", borderColor: "#99e6ff" },
+  fertileDayText: { color: "#007bff", fontWeight: "bold" },
+  legend: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginTop: 16,
+  },
+  legendItem: { flexDirection: "row", alignItems: "center" },
+  legendColor: { width: 16, height: 16, borderRadius: 8, marginRight: 4 },
+  legendText: { fontSize: 12, color: "#333" },
+})

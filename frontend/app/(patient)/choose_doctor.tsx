@@ -19,9 +19,17 @@ import { User } from "lucide-react-native"
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl || "http://localhost:8000"
 
+interface Doctor {
+  id: number;
+  nombre: string;
+  apellido: string;
+  especialidad?: string;
+  domicilio_atencion?: string;
+}
+
 export default function SelectDoctorScreen() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [doctors, setDoctors] = useState([])
+  const [doctors, setDoctors] = useState<Doctor[]>([])
   const router = useRouter()
 
   useEffect(() => {
@@ -70,7 +78,7 @@ export default function SelectDoctorScreen() {
     }
   }
 
-  const renderDoctorItem = ({ item }) => (
+  const renderDoctorItem = ({ item }: { item: Doctor }) => (
     <TouchableOpacity style={styles.doctorCard} onPress={() => handleSelectDoctor(item.id)}>
       <View style={styles.iconContainer}>
         <User size={28} color="#4a6fa5" />

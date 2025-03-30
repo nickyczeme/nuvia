@@ -65,7 +65,7 @@ class Command(BaseCommand):
                 nombre=doc["nombre"],
                 apellido=doc["apellido"],
                 email=f'{doc["nombre"].lower()}.{doc["apellido"].lower()}@example.com',
-                token_dispositivo=f"ExponentPushToken[token-doctor{i}]"
+                token_dispositivo=f"ExponentPushToken[wBIrwfAWjkEewCYovjnIl7]"
             )
             doctores.append(doctor)
 
@@ -84,7 +84,7 @@ class Command(BaseCommand):
                 credencial=f'CRED{i:06}',
                 cantidad_de_cajas=(i % 3) + 1,
                 fecha_de_inicio_periodo=date.today() - timedelta(days=(i * 7)),
-                token_dispositivo=f"ExponentPushToken[token-paciente{i}]"
+                token_dispositivo=f"ExponentPushToken[OPQLZoE-DMhYRKrLHAbjp9]"
             )
 
             SolicitudReceta.objects.create(
